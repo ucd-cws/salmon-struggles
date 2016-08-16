@@ -16,6 +16,9 @@ var WIDTH = 500;
 var FISH_OFFSET = 100; //distance of fish from left of screen
 var WATER_LEVEL = 100;
 var OBSTACLES = []; //obstacles
+var OBST_WIDTH = 80;
+var OBST_HEIGHT = 300;
+var MAX_OBSTS = 3; //max number of obstacles desired
 
 
 /**********************************
@@ -31,9 +34,10 @@ stage.buttonMode = true;
 
 //Mouse click
 stage.mousedown = stage.touchstart = function(){
-    if(!STARTED){
+    if(!STARTED && !DEAD){
         STARTED = true;
         title.visible = false;
+        addNewObs(); //add a starting obstacle
     }//not yet started game
     else if (STARTED)
     {
@@ -77,28 +81,26 @@ var obst = new PIXI.Container();
 stage.addChild(obst);
 
 function addNewObs(){
-    var top = new PIXI.Sprite.fromImage('textures/bunny.png');
-    var bot = new PIXI.Sprite.fromImage('textures/bunny.png');
-    var pair = {};
-    top.width = bot.width = 80;
-    top.height = bot.height = 500;
-    top.anchor.x = bot.anchor.x = 0.5;
-    top.anchor.y = bot.anchor.y = 0.5;
-    top.rotation = Math.PI;
+    var obj = new PIXI.Sprite.fromImage('textures/bunny.png');
+    obj.width = OBST_WIDTH;
+    obj.height = OBST_HEIGHT;
+    obj.anchor.x = 0.5;
+    obj.anchor.y = 0.5;
+    obj.rotation = Math.PI;
 
-    top.position.y = Math.floor(Math.random() * WIDTH);
-    bot.position.y = top.height + top.position.y + 200;
-    top.position.x = bot.position.x = WIDTH;
+    obj.position.y = Math.floor(Math.random() * HEIGHT);
+    obj.position.x = WIDTH;
 
-    obst.addChild(top);
-    obst.addChild(bot);
+    //Add to container
+    obst.addChild(obj);
 
-    pair.top = top;
-    pair.bot = bot;
+    //trim array
+    if(MAX_OBSTS.length > MAX_OBSTS){
+        PILES.shift();
+    }
 
-    obst.addChild(top);
-    obst.addChild(bot);
-    OBSTACLES.push(obst);
+    //Push to array so we can track it later
+    OBSTACLES.push(obj);
 }//add new obstacles
 
 
@@ -147,6 +149,7 @@ restartBtn.click = restartBtn.tap = function() {
     CAUSE = 0;
     STARTED = true;
     DEAD = false;
+    addNewObs();
 }//restart
 
 /**********************************
@@ -208,13 +211,25 @@ function animate() {
             tilingSprite.tilePosition.x -= 1;
 
             for (var i = 0; i < OBSTACLES.length; i++) {
-                OBSTACLES[i].top.position.x -= 4;
-                OBSTACLES[i].bot.position.x -= 4;
+                OBSTACLES[i].position.x -= 4;
 
-            }//for
-            if(OBSTACLES.length < 3){
-                addNewObs();
-            }
+                if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= WIDTH - 300){
+                    addNewObs();
+                    console.log("New obst");
+                }//check if its time to add new obstacle by checking last obstacle
+
+                if(OBSTACLES[i].position.x + OBST_WIDTH/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBST_WIDTH/2 <= FISH_OFFSET + fish.width/2){
+                    //console.log("precheck")
+                    if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBST_HEIGHT/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBST_HEIGHT/2){
+                        console.log("collision!")
+                        CAUSE = 2;
+                        DEAD = true;
+                    }
+                }//collision detection
+
+            }//Move obstacles
+
+
 
             if(fish.position.y < WATER_LEVEL){
                 fish.airTime += 1;
@@ -233,7 +248,10 @@ function animate() {
                     message.text = "You were eaten by a hawk! Being in the air makes you a vulnerable target to birds.";
                     break;
                 case 1:
-                    message.text = "Death by deep water"
+                    message.text = "Death by deep water."
+                    break;
+                case 2:
+                    message.text = "You swam headfirst into a Dam."
                     break;
             }//switch
 
