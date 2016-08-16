@@ -18,7 +18,7 @@ var WATER_LEVEL = 100;
 var OBSTACLES = []; //obstacles
 var OBST_WIDTH = 80;
 var OBST_HEIGHT = 300;
-var MAX_OBSTS = 3; //max number of obstacles desired
+var MAX_OBSTS = 3; //max number of active obstacles desired (to trim array size)
 
 
 /**********************************
@@ -33,17 +33,24 @@ stage.interactive = true;
 stage.buttonMode = true;
 
 //Mouse click
-stage.mousedown = stage.touchstart = function(){
+stage
+    .on('mousedown', onMouseDown)
+    .on('touchstart', onMouseDown)
+
+function onMouseDown(){
     if(!STARTED && !DEAD){
         STARTED = true;
         title.visible = false;
         addNewObs(); //add a starting obstacle
     }//not yet started game
-    else if (STARTED)
-    {
+    else if (STARTED) {
         fish.speedY = FISH_SPEED;
     }//game started
 };//click
+
+stage.mouseUp = stage.onTouchEnd = function(){
+    down = false;
+}//release
 
 /**********************************
  * Water Background
@@ -55,10 +62,15 @@ stage.addChild(tilingSprite);
 /**********************************
  * Surface
  **********************************/
-var surface = new PIXI.Graphics();
-surface.lineStyle(2, 0x0000FF, 1);
-surface.beginFill(0xFF700B, 1);
-surface.drawRect(0, 0, WIDTH, WATER_LEVEL);
+/*var surface = new PIXI.Graphics();
+//surface.lineStyle(2, 0x0000FF, 1);
+surface.beginFill(0xEEEEEE, 1);
+surface.drawRect(0, 0, WIDTH, WATER_LEVEL);*/
+var surface = PIXI.Sprite.fromImage('textures/sky.png');
+surface.width = WIDTH;
+surface.height = WATER_LEVEL;
+surface.position.x = 0;
+surface.position.y = 0;
 stage.addChild(surface);
 
 /**********************************
@@ -81,26 +93,26 @@ var obst = new PIXI.Container();
 stage.addChild(obst);
 
 function addNewObs(){
-    var obj = new PIXI.Sprite.fromImage('textures/bunny.png');
-    obj.width = OBST_WIDTH;
-    obj.height = OBST_HEIGHT;
-    obj.anchor.x = 0.5;
-    obj.anchor.y = 0.5;
-    obj.rotation = Math.PI;
+    var obj = new PIXI.Texture.fromImage('textures/dam.jpg');
+    var tilingSprite = new PIXI.TilingSprite(obj, WIDTH, HEIGHT);
+    tilingSprite.width = OBST_WIDTH;
+    tilingSprite.height = OBST_HEIGHT;
+    tilingSprite.anchor.x = 0.5;
+    tilingSprite.anchor.y = 0.5;
+    //tilingSprite.rotation = Math.PI;
 
-    obj.position.y = Math.floor(Math.random() * HEIGHT);
-    obj.position.x = WIDTH;
+    tilingSprite.position.y = Math.floor(Math.random() * HEIGHT);
+    tilingSprite.position.x = WIDTH + OBST_WIDTH;
 
     //Add to container
-    obst.addChild(obj);
+    obst.addChild(tilingSprite);
 
-    //trim array
     if(MAX_OBSTS.length > MAX_OBSTS){
-        PILES.shift();
-    }
+        OBSTACLES.shift();
+    }//trim array
 
     //Push to array so we can track it later
-    OBSTACLES.push(obj);
+    OBSTACLES.push(tilingSprite);
 }//add new obstacles
 
 
@@ -121,13 +133,20 @@ var style = {
 };
 
 var messageStyle = {
-    font : '30px Arial',
+    font : 'bold 30px Arial',
     fill : '#F7EDCA',
-    stroke : '#000000',
-    strokeThickness : 0,
+    stroke : '#111111',
+    strokeThickness : 3,
     wordWrap : true,
     wordWrapWidth : WIDTH - 80 //30 and 10 for one size * 2
 };
+
+var warningStyle = {
+    font : '30px Arial',
+    fill : '#ff4000',
+    stroke : '#000000',
+    strokeThickness : 0,
+}
 
 /**********************************
  * Restart Button
@@ -158,25 +177,28 @@ restartBtn.click = restartBtn.tap = function() {
 
 
 //Title
-var title = new PIXI.Text('Salmon Struggles: The Story of Sam the Salmon',style);
+var title = new PIXI.Text('Salmon Struggles: The Story of Sam the Salmon', style);
 title.x = 30;
 title.y = 180;
 stage.addChild(title);
 
 //text placed in the summary container
+var warning = new PIXI.Text("", warningStyle);
+warning.x = 20;
+warning.y = 20;
+stage.addChild(warning);
+
+//post death summary container
+var summary = new PIXI.Graphics();
+//rectangle
+summary.lineStyle(2, 0xFF00FF, 1);
+summary.beginFill(0xFF00BB, 0.35);
+summary.drawRoundedRect(30, 30, WIDTH - 60, HEIGHT - 100, 15);
+summary.endFill();
+//text placed in the summary container
 var message = new PIXI.Text("", messageStyle);
 message.x = 40;
 message.y = 40;
-
-//post death summary
-var summary = new PIXI.Graphics();
-
-//rectangle
-summary.lineStyle(2, 0xFF00FF, 1);
-summary.beginFill(0xFF00BB, 0.25);
-summary.drawRoundedRect(30, 30, WIDTH - 60, HEIGHT - 100, 15);
-summary.endFill();
-
 //add contents to the summary
 summary.addChild(restartBtn); //add restart button
 summary.addChild(message); //add cause of death
@@ -196,7 +218,6 @@ function animate() {
     requestAnimationFrame(animate);
 
     if(STARTED) {
-        console.log(fish.airTime);
         if( fish.airTime > 100) {
             CAUSE = 0;
             DEAD = true;
@@ -215,13 +236,10 @@ function animate() {
 
                 if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= WIDTH - 300){
                     addNewObs();
-                    console.log("New obst");
                 }//check if its time to add new obstacle by checking last obstacle
 
                 if(OBSTACLES[i].position.x + OBST_WIDTH/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBST_WIDTH/2 <= FISH_OFFSET + fish.width/2){
-                    //console.log("precheck")
                     if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBST_HEIGHT/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBST_HEIGHT/2){
-                        console.log("collision!")
                         CAUSE = 2;
                         DEAD = true;
                     }
@@ -232,10 +250,14 @@ function animate() {
 
 
             if(fish.position.y < WATER_LEVEL){
+                if(fish.airTime > 20){
+                    warning.text = "Bird Alert!";
+                }//display warning
                 fish.airTime += 1;
             }//check if over water
             else{
                 fish.airTime = 0;
+                warning.text = "";
             }//fish is under water
 
             //Let fish descend
@@ -256,6 +278,7 @@ function animate() {
             }//switch
 
             STARTED = false;
+            warning.text = false;
             summary.visible = true;
         }//check if died
 
