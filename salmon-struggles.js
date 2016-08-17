@@ -25,6 +25,7 @@ var OBSTACLES = []; //obstacles array
 var OBST_WIDTH = 80;
 var OBST_HEIGHT = 100;
 var NUM_TYPES = 3; //number of types of obstacles
+var AIR_THRESHOLD = 130;
 
 
 /**********************************
@@ -232,7 +233,7 @@ function animate() {
     requestAnimationFrame(animate);
 
     if(STARTED) {
-        if( fish.airTime > 180) {
+        if( fish.airTime > AIR_THRESHOLD) {
             CAUSE = 0;
             DEAD = true;
         }//death by bird
@@ -244,18 +245,17 @@ function animate() {
 
 
             for (var i = 0; i < OBSTACLES.length; i++) {
-                OBSTACLES[i].position.x -= 4;
-
 
                 if(OBSTACLES[i].x < -OBST_WIDTH*2){
                     OBSTACLES.shift();
-                    i--; //index needs to change after a shift!
                 }//remove obstacles that have passed
+
+                OBSTACLES[i].position.x -= 4;
 
                 if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= FISH_OFFSET){
                     //add new random obstacles
-                    //var selection = Math.floor(NUM_TYPES * Math.random());
-                    var selection = 0;
+                    var selection = Math.floor(NUM_TYPES * Math.random());
+                    //var selection = 0;
                     var y = Math.floor(Math.random() * HEIGHT);
                     //console.log(selection);
                     switch(selection){
@@ -279,13 +279,13 @@ function animate() {
                     }
                 }//collision detection
 
-            }//Move obstacles
+            }//Move obstacles and generate new ones
 
             moveBackground();
 
             if(fish.position.y < WATER_LEVEL){
                 if(fish.airTime > 30){
-                    warning.text = "Bird Alert!";
+                    warning.text = "Bird Alert! " + Math.floor((AIR_THRESHOLD - fish.airTime)/10);
                 }//display warning
                 fish.airTime += 1;
             }//check if over water
