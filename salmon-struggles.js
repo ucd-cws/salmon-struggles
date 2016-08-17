@@ -14,7 +14,8 @@ var CAUSE = 0; //represents cause of death
 var HEIGHT = 600;
 var WIDTH = 500;
 var FISH_OFFSET = 100; //distance of fish from left of screen
-var WATER_LEVEL = 100;
+var WATER_LEVEL = 100; //where water level is
+var GROUND_HEIGHT = 50;
 var OBSTACLES = []; //obstacles
 var OBST_WIDTH = 80;
 var OBST_HEIGHT = 300;
@@ -56,22 +57,33 @@ stage.mouseUp = stage.onTouchEnd = function(){
  * Water Background
  **********************************/
 var water = PIXI.Texture.fromImage('textures/water.png');
-var tilingSprite = new PIXI.TilingSprite(water, WIDTH, HEIGHT);
-stage.addChild(tilingSprite);
+var tilingWater = new PIXI.TilingSprite(water, WIDTH, HEIGHT);
+tilingWater.tileScale.y = 0.6;
+stage.addChild(tilingWater);
 
 /**********************************
- * Surface
+ * Surface (Sky)
  **********************************/
-/*var surface = new PIXI.Graphics();
-//surface.lineStyle(2, 0x0000FF, 1);
-surface.beginFill(0xEEEEEE, 1);
-surface.drawRect(0, 0, WIDTH, WATER_LEVEL);*/
-var surface = PIXI.Sprite.fromImage('textures/sky.png');
-surface.width = WIDTH;
-surface.height = WATER_LEVEL;
-surface.position.x = 0;
-surface.position.y = 0;
-stage.addChild(surface);
+var surface = PIXI.Texture.fromImage('textures/sky.png');
+var tilingSurface = new PIXI.TilingSprite(surface, WIDTH, HEIGHT);
+//surface.width = WIDTH;
+tilingSurface.height = WATER_LEVEL;
+//tilingSurface.position.x = 0;
+//tilingSurface.position.y = 0;
+stage.addChild(tilingSurface);
+
+/**********************************
+ * Ground
+ **********************************/
+var sand = new PIXI.Texture.fromImage('textures/sand.png');
+var tilingGround = new PIXI.TilingSprite(sand, WIDTH, HEIGHT);
+tilingGround.width = WIDTH;
+tilingGround.height = GROUND_HEIGHT;
+//tilingGround.anchor.x = 0.5;
+//tilingGround.anchor.y = 0.5;
+tilingGround.position.x = 0;
+tilingGround.position.y = HEIGHT - GROUND_HEIGHT;
+stage.addChild(tilingGround);
 
 /**********************************
  * Fish
@@ -93,26 +105,26 @@ var obst = new PIXI.Container();
 stage.addChild(obst);
 
 function addNewObs(){
-    var obj = new PIXI.Texture.fromImage('textures/dam.jpg');
-    var tilingSprite = new PIXI.TilingSprite(obj, WIDTH, HEIGHT);
-    tilingSprite.width = OBST_WIDTH;
-    tilingSprite.height = OBST_HEIGHT;
-    tilingSprite.anchor.x = 0.5;
-    tilingSprite.anchor.y = 0.5;
-    //tilingSprite.rotation = Math.PI;
+    var obj = new PIXI.Texture.fromImage('textures/dam.png');
+    var tilingDam = new PIXI.TilingSprite(obj, WIDTH, HEIGHT);
+    tilingDam.width = OBST_WIDTH;
+    tilingDam.height = OBST_HEIGHT;
+    tilingDam.anchor.x = 0.5;
+    tilingDam.anchor.y = 0.5;
+    //tilingDam.rotation = Math.PI;
 
-    tilingSprite.position.y = Math.floor(Math.random() * HEIGHT);
-    tilingSprite.position.x = WIDTH + OBST_WIDTH;
+    tilingDam.position.y = Math.floor(Math.random() * HEIGHT);
+    tilingDam.position.x = WIDTH + OBST_WIDTH;
 
     //Add to container
-    obst.addChild(tilingSprite);
+    obst.addChild(tilingDam);
 
     if(MAX_OBSTS.length > MAX_OBSTS){
         OBSTACLES.shift();
     }//trim array
 
     //Push to array so we can track it later
-    OBSTACLES.push(tilingSprite);
+    OBSTACLES.push(tilingDam);
 }//add new obstacles
 
 
@@ -227,9 +239,7 @@ function animate() {
             DEAD = true;
         }//death by deep water
         else if(!DEAD){
-            //Animate water
-            tilingSprite.tileScale.y = 0.6;
-            tilingSprite.tilePosition.x -= 1;
+
 
             for (var i = 0; i < OBSTACLES.length; i++) {
                 OBSTACLES[i].position.x -= 4;
@@ -247,7 +257,7 @@ function animate() {
 
             }//Move obstacles
 
-
+            moveBackground();
 
             if(fish.position.y < WATER_LEVEL){
                 if(fish.airTime > 20){
@@ -270,7 +280,7 @@ function animate() {
                     message.text = "You were eaten by a hawk! Being in the air makes you a vulnerable target to birds.";
                     break;
                 case 1:
-                    message.text = "Death by deep water."
+                    message.text = "Death by cuttlefish."
                     break;
                 case 2:
                     message.text = "You swam headfirst into a Dam."
@@ -293,3 +303,9 @@ function descend(){
     fish.rotation += 0.1;
     fish.position.y -= fish.speedY;
 }//descend logic
+
+function moveBackground(){
+    tilingWater.tilePosition.x -= 1; //water
+    tilingSurface.tilePosition.x -= 0.25; //sky
+    tilingGround.tilePosition.x -= 2; //ground
+}//move background
