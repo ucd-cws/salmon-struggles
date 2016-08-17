@@ -2,6 +2,11 @@
  * Created by Lawrence on 8/11/2016.
  */
 
+/** TO DO:
+ * Textures are too large!
+ *
+ */
+
 
 /**********************************
  * Global Variables
@@ -16,10 +21,10 @@ var WIDTH = 500;
 var FISH_OFFSET = 100; //distance of fish from left of screen
 var WATER_LEVEL = 100; //where water level is
 var GROUND_HEIGHT = 50;
-var OBSTACLES = []; //obstacles
+var OBSTACLES = []; //obstacles array
 var OBST_WIDTH = 80;
-var OBST_HEIGHT = 300;
-var MAX_OBSTS = 3; //max number of active obstacles desired (to trim array size)
+var OBST_HEIGHT = 100;
+var NUM_TYPES = 3; //number of types of obstacles
 
 
 /**********************************
@@ -42,7 +47,7 @@ function onMouseDown(){
     if(!STARTED && !DEAD){
         STARTED = true;
         title.visible = false;
-        addNewObs(); //add a starting obstacle
+        addNewObs(WIDTH, HEIGHT/2, OBST_WIDTH, OBST_HEIGHT, 3); //add a starting obstacle
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
@@ -57,7 +62,7 @@ stage.mouseUp = stage.onTouchEnd = function(){
  * Water Background
  **********************************/
 var water = PIXI.Texture.fromImage('textures/water.png');
-var tilingWater = new PIXI.TilingSprite(water, WIDTH, HEIGHT);
+var tilingWater = new PIXI.extras.TilingSprite(water, WIDTH, HEIGHT);
 tilingWater.tileScale.y = 0.6;
 stage.addChild(tilingWater);
 
@@ -65,7 +70,7 @@ stage.addChild(tilingWater);
  * Surface (Sky)
  **********************************/
 var surface = PIXI.Texture.fromImage('textures/sky.png');
-var tilingSurface = new PIXI.TilingSprite(surface, WIDTH, HEIGHT);
+var tilingSurface = new PIXI.extras.TilingSprite(surface, WIDTH, HEIGHT);
 //surface.width = WIDTH;
 tilingSurface.height = WATER_LEVEL;
 //tilingSurface.position.x = 0;
@@ -76,7 +81,7 @@ stage.addChild(tilingSurface);
  * Ground
  **********************************/
 var sand = new PIXI.Texture.fromImage('textures/sand.png');
-var tilingGround = new PIXI.TilingSprite(sand, WIDTH, HEIGHT);
+var tilingGround = new PIXI.extras.TilingSprite(sand, WIDTH, HEIGHT);
 tilingGround.width = WIDTH;
 tilingGround.height = GROUND_HEIGHT;
 //tilingGround.anchor.x = 0.5;
@@ -104,24 +109,21 @@ stage.addChild(fish);
 var obst = new PIXI.Container();
 stage.addChild(obst);
 
-function addNewObs(){
+function addNewObs(x, y, w, h, type){
     var obj = new PIXI.Texture.fromImage('textures/dam.png');
-    var tilingDam = new PIXI.TilingSprite(obj, WIDTH, HEIGHT);
-    tilingDam.width = OBST_WIDTH;
-    tilingDam.height = OBST_HEIGHT;
+    var tilingDam = new PIXI.extras.TilingSprite(obj, WIDTH, HEIGHT);
+    tilingDam.width = w;
+    tilingDam.height = h;
     tilingDam.anchor.x = 0.5;
     tilingDam.anchor.y = 0.5;
-    //tilingDam.rotation = Math.PI;
 
-    tilingDam.position.y = Math.floor(Math.random() * HEIGHT);
-    tilingDam.position.x = WIDTH + OBST_WIDTH;
+    tilingDam.position.y = y;
+    tilingDam.position.x = x + w;
+
+    tilingDam.type = type; //type used to determine death
 
     //Add to container
     obst.addChild(tilingDam);
-
-    if(MAX_OBSTS.length > MAX_OBSTS){
-        OBSTACLES.shift();
-    }//trim array
 
     //Push to array so we can track it later
     OBSTACLES.push(tilingDam);
@@ -180,7 +182,7 @@ restartBtn.click = restartBtn.tap = function() {
     CAUSE = 0;
     STARTED = true;
     DEAD = false;
-    addNewObs();
+    addNewObs(WIDTH, HEIGHT/2, OBST_WIDTH, OBST_HEIGHT, 3);
 }//restart
 
 /**********************************
@@ -230,7 +232,7 @@ function animate() {
     requestAnimationFrame(animate);
 
     if(STARTED) {
-        if( fish.airTime > 100) {
+        if( fish.airTime > 180) {
             CAUSE = 0;
             DEAD = true;
         }//death by bird
@@ -244,13 +246,35 @@ function animate() {
             for (var i = 0; i < OBSTACLES.length; i++) {
                 OBSTACLES[i].position.x -= 4;
 
-                if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= WIDTH - 300){
-                    addNewObs();
-                }//check if its time to add new obstacle by checking last obstacle
+
+                if(OBSTACLES[i].x < -OBST_WIDTH*2){
+                    OBSTACLES.shift();
+                    i--; //index needs to change after a shift!
+                }//remove obstacles that have passed
+
+                if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= FISH_OFFSET){
+                    //add new random obstacles
+                    //var selection = Math.floor(NUM_TYPES * Math.random());
+                    var selection = 0;
+                    var y = Math.floor(Math.random() * HEIGHT);
+                    //console.log(selection);
+                    switch(selection){
+                        case 0:
+                            makeDam();
+                            break;
+                        case 1:
+                            addNewObs(WIDTH, y, OBST_WIDTH, OBST_HEIGHT, 3);
+                            break;
+                        case 2:
+                            addNewObs(WIDTH, y, OBST_WIDTH, OBST_HEIGHT, 3);
+                            break;
+                    }
+
+                }//check if its time to add new obstacle by checking last obstacle's position
 
                 if(OBSTACLES[i].position.x + OBST_WIDTH/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBST_WIDTH/2 <= FISH_OFFSET + fish.width/2){
-                    if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBST_HEIGHT/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBST_HEIGHT/2){
-                        CAUSE = 2;
+                    if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBSTACLES[i].height/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBSTACLES[i].height/2){
+                        CAUSE = OBSTACLES[i].type;
                         DEAD = true;
                     }
                 }//collision detection
@@ -260,7 +284,7 @@ function animate() {
             moveBackground();
 
             if(fish.position.y < WATER_LEVEL){
-                if(fish.airTime > 20){
+                if(fish.airTime > 30){
                     warning.text = "Bird Alert!";
                 }//display warning
                 fish.airTime += 1;
@@ -284,6 +308,9 @@ function animate() {
                     break;
                 case 2:
                     message.text = "You swam headfirst into a Dam."
+                    break;
+                case 3:
+                    message.text = "You swam into debris."
                     break;
             }//switch
 
@@ -309,3 +336,9 @@ function moveBackground(){
     tilingSurface.tilePosition.x -= 0.25; //sky
     tilingGround.tilePosition.x -= 2; //ground
 }//move background
+
+function makeDam(){
+    addNewObs(WIDTH, HEIGHT/2 + 200, OBST_WIDTH, HEIGHT, 2);
+    addNewObs(WIDTH+OBST_WIDTH, HEIGHT/2 + 150, OBST_WIDTH, HEIGHT, 2);
+    addNewObs(WIDTH+OBST_WIDTH*2, HEIGHT/2 + 70, OBST_WIDTH, HEIGHT, 2);
+}//make Dam
