@@ -2,12 +2,6 @@
  * Created by Lawrence on 8/11/2016.
  */
 
-/** TO DO:
- * Preloader
- *
- */
-
-
 /**********************************
  * Global Variables
  **********************************/
@@ -27,15 +21,7 @@ var OBST_HEIGHT = 100;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [5, 10, 20]
-
-/** Obstacle Codes
- *  0 - Death by Bird
- *  1 - Death by Cuttlefish
- *  2 - Death by Dam
- *  3 - Death by Debris
- *  4 - Food
- */
+var FOOD_REQ = [5, 10, 15]
 
 /**********************************
  * Renderer and Stage setup
@@ -57,8 +43,10 @@ function onMouseDown(){
     if(!STARTED && !DEAD){
         STARTED = true;
         title.visible = false;
+        clickText.visible = false;
         makeFood(); //add a starting obstacle
         stageText.text = "Stage 1: Fry";
+        stageText.style.stroke = "#000077";
         foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
     }//not yet started game
     else if (STARTED) {
@@ -145,6 +133,34 @@ function addNewObs(x, y, w, h, type){
 /**********************************
  * Text styles
  **********************************/
+
+var titleStyle = {
+    font : 'bold 72px Comic Sans MS',
+    fill : '#F7EDCA',
+    stroke : '#4a1850',
+    strokeThickness : 5,
+    align: 'center',
+    dropShadow : true,
+    dropShadowColor : '#000000',
+    dropShadowAngle : Math.PI / 6,
+    dropShadowDistance : 6,
+    wordWrap : true,
+    wordWrapWidth : 440
+};
+
+var clickStyle = {
+    font : 'bold italic 32px Arial',
+    fill : '#F7EDCA',
+    stroke : '#4a1850',
+    strokeThickness : 5,
+    dropShadow : true,
+    dropShadowColor : '#000000',
+    dropShadowAngle : Math.PI / 6,
+    dropShadowDistance : 6,
+    wordWrap : true,
+    wordWrapWidth : 440
+};
+
 var style = {
     font : 'bold italic 36px Arial',
     fill : '#F7EDCA',
@@ -186,7 +202,7 @@ var hudStyle = {
  **********************************/
 var restartBtn = new PIXI.Text("Restart Stage", style);
 restartBtn.x = 130;
-restartBtn.y = 510;
+restartBtn.y = 140;
 restartBtn.interactive = true;
 restartBtn.buttonMode = true;
 //Reset all the values
@@ -202,8 +218,8 @@ restartBtn.click = restartBtn.tap = function() {
     STARTED = true;
     DEAD = false;
     FOOD_COUNT = 0;
-    STAGE = 0;
-    stageText.text = "Stage: Fry";
+    foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+    warning.visible = true;
     makeFood();
 }//restart
 
@@ -213,10 +229,15 @@ restartBtn.click = restartBtn.tap = function() {
 
 
 //Title
-var title = new PIXI.Text('Salmon Struggles: The Story of Sam the Salmon', style);
-title.x = 30;
-title.y = 180;
+var title = new PIXI.Text('Salmon Struggles', titleStyle);
+title.x = 80;
+title.y = 70;
 stage.addChild(title);
+
+var clickText = new PIXI.Text('Click to start', clickStyle);
+clickText.x = 150;
+clickText.y = 300;
+stage.addChild(clickText);
 
 //Food text
 var foodText = new PIXI.Text("", hudStyle);
@@ -241,7 +262,7 @@ var summary = new PIXI.Graphics();
 //rectangle
 summary.lineStyle(2, 0xFF00FF, 1);
 summary.beginFill(0xFF00BB, 0.35);
-summary.drawRoundedRect(30, 35, WIDTH - 60, HEIGHT - 100, 15);
+summary.drawRoundedRect(30, 35, WIDTH - 60, 130, 15);
 summary.endFill();
 //text placed in the summary container
 var message = new PIXI.Text("", messageStyle);
@@ -298,6 +319,26 @@ function animate() {
                         }//hit into something bad
                         else{
                             FOOD_COUNT += 1;
+
+                            if(FOOD_COUNT == FOOD_REQ[STAGE]) {
+                                FOOD_COUNT = 0;
+                                if (STAGE < 2) {
+                                    STAGE += 1;
+
+                                    switch(STAGE){
+                                        case(1):
+                                            stageText.text = "Stage 2: Smolt";
+                                            stageText.style.stroke = "#007700";
+                                            break;
+                                        case(2):
+                                            stageText.text = "Stage 3: Adult";
+                                            stageText.style.stroke = "#770000";
+                                            break;
+                                    }//update Stage text
+
+                                }//stage up
+                            }//check if met food requirements
+
                             foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
                             OBSTACLES[i].visible = false;
                             OBSTACLES.splice(i, 1);
@@ -342,7 +383,7 @@ function animate() {
             }//switch
 
             STARTED = false;
-            //warning.visible = false;
+            warning.visible = false;
             summary.visible = true;
         }//check if died
 
@@ -394,12 +435,16 @@ function spawnObstacle(){
 }//spawn random obstacle
 
 function makeFood(){
-    var rand_y = Math.floor(Math.random() * HEIGHT);
+    console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
+    var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+    console.log("added food at " + rand_y);
     addNewObs(WIDTH, rand_y, 32, 32, "Food");
 }//make food
 
 function makeDebris(){
-    var rand_y = Math.floor(Math.random() * HEIGHT);
+    console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
+    var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+    console.log("added debris at " + rand_y);
     addNewObs(WIDTH, rand_y, OBST_WIDTH, OBST_HEIGHT, "Debris");
 }//make Debris
 
