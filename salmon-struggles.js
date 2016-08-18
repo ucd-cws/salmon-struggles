@@ -3,7 +3,7 @@
  */
 
 /** TO DO:
- * Textures are too large!
+ * Preloader
  *
  */
 
@@ -25,8 +25,10 @@ var OBSTACLES = []; //obstacles array
 var OBST_WIDTH = 80;
 var OBST_HEIGHT = 100;
 var NUM_TYPES = 3; //number of types of obstacles
-var AIR_THRESHOLD = 130;
-
+var AIR_THRESHOLD = 130; //time units player can stay above water
+var STAGE = 1; //what stage player is on (Fry, Smolt, Adult)
+var FOOD_COUNT = 0;
+var FOOD_REQ = [10, 20, 40]
 
 /**********************************
  * Renderer and Stage setup
@@ -49,6 +51,8 @@ function onMouseDown(){
         STARTED = true;
         title.visible = false;
         addNewObs(WIDTH, HEIGHT/2, OBST_WIDTH, OBST_HEIGHT, 3); //add a starting obstacle
+        stageText.text = "Stage 1: Fry";
+        foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
@@ -149,26 +153,33 @@ var style = {
 
 var messageStyle = {
     font : 'bold 30px Arial',
-    fill : '#F7EDCA',
-    stroke : '#111111',
-    strokeThickness : 3,
+    fill : '#EEEEEE',
+    stroke : '#333333',
+    strokeThickness : 5,
     wordWrap : true,
     wordWrapWidth : WIDTH - 80 //30 and 10 for one size * 2
 };
 
 var warningStyle = {
-    font : '30px Arial',
-    fill : '#ff4000',
-    stroke : '#000000',
-    strokeThickness : 0,
+    font : 'bold 26px Arial',
+    fill : '#ff1000',
+    stroke : '#EEEEEE',
+    strokeThickness : 5,
+}
+
+var hudStyle = {
+    font : 'bold 20px Arial',
+    fill : '#F7EDCA',
+    stroke : '#000077',
+    strokeThickness : 5,
 }
 
 /**********************************
  * Restart Button
  **********************************/
-var restartBtn = new PIXI.Text("Restart", style);
-restartBtn.x = 180;
-restartBtn.y = 505;
+var restartBtn = new PIXI.Text("Restart Stage", style);
+restartBtn.x = 130;
+restartBtn.y = 510;
 restartBtn.interactive = true;
 restartBtn.buttonMode = true;
 //Reset all the values
@@ -183,6 +194,7 @@ restartBtn.click = restartBtn.tap = function() {
     CAUSE = 0;
     STARTED = true;
     DEAD = false;
+    stageText.text = "Stage: Fry";
     addNewObs(WIDTH, HEIGHT/2, OBST_WIDTH, OBST_HEIGHT, 3);
 }//restart
 
@@ -197,10 +209,22 @@ title.x = 30;
 title.y = 180;
 stage.addChild(title);
 
-//text placed in the summary container
+//Food text
+var foodText = new PIXI.Text("", hudStyle);
+foodText.x = 200;
+foodText.y = 5;
+stage.addChild(foodText);
+
+//Stage text
+var stageText = new PIXI.Text("", hudStyle);
+stageText.x = 5;
+stageText.y = 5;
+stage.addChild(stageText);
+
+//Bird Alert warning text
 var warning = new PIXI.Text("", warningStyle);
-warning.x = 20;
-warning.y = 20;
+warning.x = 170;
+warning.y = 50;
 stage.addChild(warning);
 
 //post death summary container
@@ -208,7 +232,7 @@ var summary = new PIXI.Graphics();
 //rectangle
 summary.lineStyle(2, 0xFF00FF, 1);
 summary.beginFill(0xFF00BB, 0.35);
-summary.drawRoundedRect(30, 30, WIDTH - 60, HEIGHT - 100, 15);
+summary.drawRoundedRect(30, 35, WIDTH - 60, HEIGHT - 100, 15);
 summary.endFill();
 //text placed in the summary container
 var message = new PIXI.Text("", messageStyle);
@@ -315,7 +339,7 @@ function animate() {
             }//switch
 
             STARTED = false;
-            warning.text = false;
+            //warning.visible = false;
             summary.visible = true;
         }//check if died
 
