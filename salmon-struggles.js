@@ -24,11 +24,18 @@ var GROUND_HEIGHT = 50;
 var OBSTACLES = []; //obstacles array
 var OBST_WIDTH = 80;
 var OBST_HEIGHT = 100;
-var NUM_TYPES = 3; //number of types of obstacles
 var AIR_THRESHOLD = 130; //time units player can stay above water
-var STAGE = 1; //what stage player is on (Fry, Smolt, Adult)
+var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [10, 20, 40]
+var FOOD_REQ = [5, 10, 20]
+
+/** Obstacle Codes
+ *  0 - Death by Bird
+ *  1 - Death by Cuttlefish
+ *  2 - Death by Dam
+ *  3 - Death by Debris
+ *  4 - Food
+ */
 
 /**********************************
  * Renderer and Stage setup
@@ -50,7 +57,7 @@ function onMouseDown(){
     if(!STARTED && !DEAD){
         STARTED = true;
         title.visible = false;
-        addNewObs(WIDTH, HEIGHT/2, OBST_WIDTH, OBST_HEIGHT, 3); //add a starting obstacle
+        makeFood(); //add a starting obstacle
         stageText.text = "Stage 1: Fry";
         foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
     }//not yet started game
@@ -194,8 +201,10 @@ restartBtn.click = restartBtn.tap = function() {
     CAUSE = 0;
     STARTED = true;
     DEAD = false;
+    FOOD_COUNT = 0;
+    STAGE = 0;
     stageText.text = "Stage: Fry";
-    addNewObs(WIDTH, HEIGHT/2, OBST_WIDTH, OBST_HEIGHT, 3);
+    makeFood();
 }//restart
 
 /**********************************
@@ -258,11 +267,11 @@ function animate() {
 
     if(STARTED) {
         if( fish.airTime > AIR_THRESHOLD) {
-            CAUSE = 0;
+            CAUSE = "Bird";
             DEAD = true;
         }//death by bird
         else if(fish.position.y > HEIGHT){
-            CAUSE = 1;
+            CAUSE = "Ground";
             DEAD = true;
         }//death by deep water
         else if(!DEAD){
@@ -277,30 +286,24 @@ function animate() {
                 OBSTACLES[i].position.x -= 4;
 
                 if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= FISH_OFFSET){
-                    //add new random obstacles
-                    var selection = Math.floor(NUM_TYPES * Math.random());
-                    //var selection = 0;
-                    var y = Math.floor(Math.random() * HEIGHT);
-                    //console.log(selection);
-                    switch(selection){
-                        case 0:
-                            makeDam();
-                            break;
-                        case 1:
-                            addNewObs(WIDTH, y, OBST_WIDTH, OBST_HEIGHT, 3);
-                            break;
-                        case 2:
-                            addNewObs(WIDTH, y, OBST_WIDTH, OBST_HEIGHT, 3);
-                            break;
-                    }
+                    spawnObstacle();
 
                 }//check if its time to add new obstacle by checking last obstacle's position
 
                 if(OBSTACLES[i].position.x + OBST_WIDTH/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBST_WIDTH/2 <= FISH_OFFSET + fish.width/2){
                     if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBSTACLES[i].height/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBSTACLES[i].height/2){
-                        CAUSE = OBSTACLES[i].type;
-                        DEAD = true;
-                    }
+                        if(OBSTACLES[i].type != "Food"){
+                            CAUSE = OBSTACLES[i].type;
+                            DEAD = true;
+                        }//hit into something bad
+                        else{
+                            FOOD_COUNT += 1;
+                            foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+                            OBSTACLES[i].visible = false;
+                            OBSTACLES.splice(i, 1);
+                            spawnObstacle();
+                        }//hit into food
+                    }//hit
                 }//collision detection
 
             }//Move obstacles and generate new ones
@@ -324,16 +327,16 @@ function animate() {
 
         if(DEAD){
             switch(CAUSE) {
-                case 0:
+                case "Bird":
                     message.text = "You were eaten by a hawk! Being in the air makes you a vulnerable target to birds.";
                     break;
-                case 1:
+                case "Ground":
                     message.text = "Death by cuttlefish."
                     break;
-                case 2:
+                case "Dam":
                     message.text = "You swam headfirst into a Dam."
                     break;
-                case 3:
+                case "Debris":
                     message.text = "You swam into debris."
                     break;
             }//switch
@@ -361,8 +364,47 @@ function moveBackground(){
     tilingGround.tilePosition.x -= 2; //ground
 }//move background
 
+function spawnObstacle(){
+    //add new random obstacles
+    var num_types = 0;
+    switch(STAGE){
+        case 0:
+            num_types = 2;
+            break;
+        case 1:
+            num_types = 2;
+            break;
+        case 2:
+            num_types = 3;
+            break;
+    }//switch
+
+    var selection = Math.floor(num_types * Math.random());
+    switch(selection) {
+        case 0:
+            makeFood();
+            break;
+        case 1:
+            makeDebris();
+            break;
+        case 2:
+            makeDam();
+            break;
+    }//switch
+}//spawn random obstacle
+
+function makeFood(){
+    var rand_y = Math.floor(Math.random() * HEIGHT);
+    addNewObs(WIDTH, rand_y, 32, 32, "Food");
+}//make food
+
+function makeDebris(){
+    var rand_y = Math.floor(Math.random() * HEIGHT);
+    addNewObs(WIDTH, rand_y, OBST_WIDTH, OBST_HEIGHT, "Debris");
+}//make Debris
+
 function makeDam(){
-    addNewObs(WIDTH, HEIGHT/2 + 200, OBST_WIDTH, HEIGHT, 2);
-    addNewObs(WIDTH+OBST_WIDTH, HEIGHT/2 + 150, OBST_WIDTH, HEIGHT, 2);
-    addNewObs(WIDTH+OBST_WIDTH*2, HEIGHT/2 + 70, OBST_WIDTH, HEIGHT, 2);
+    addNewObs(WIDTH, HEIGHT/2 + 200, OBST_WIDTH, HEIGHT, "Dam");
+    addNewObs(WIDTH+OBST_WIDTH, HEIGHT/2 + 150, OBST_WIDTH, HEIGHT, "Dam");
+    addNewObs(WIDTH+OBST_WIDTH*2, HEIGHT/2 + 70, OBST_WIDTH, HEIGHT, "Dam");
 }//make Dam
