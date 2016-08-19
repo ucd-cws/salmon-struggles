@@ -2,11 +2,6 @@
  * Created by Lawrence on 8/11/2016.
  */
 
-/**
- * TODO
- * Create proper resetart button
- */
-
 /**********************************
  * Global Variables
  **********************************/
@@ -26,7 +21,7 @@ var OBST_HEIGHT = 100;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [5, 10, 15];
+var FOOD_REQ = [2, 2, 2];
 
 /**********************************
  * Renderer and Stage setup
@@ -140,7 +135,7 @@ function addNewObs(x, y, w, h, type){
 
 var titleStyle = {
     font : 'bold 72px Comic Sans MS',
-    fill : '#F7EDCA',
+    fill : '#EEEEEE',
     stroke : '#4a1850',
     strokeThickness : 5,
     align: 'center',
@@ -224,17 +219,31 @@ letsgoBtn.interactive = true;
 letsgoBtn.buttonMode = true;
 
 letsgoBtn.click = letsgoBtn.tap = function() {
-
-
-    if(letsgoBtn.txt == "Restart?"){
-        letsgoBtn.txt = "Let's Go!";
-        STAGE = 0;
-        restartStage();
-    }//set text back after restart
-
     STARTED = true;
     instructions.visible = false;
 }//user clicked button
+
+/**********************************
+ * Play Again Button
+ **********************************/
+
+var playagainBtn = new PIXI.Text("Play Again", style);
+playagainBtn.x = 150;
+playagainBtn.y = HEIGHT - 90;
+playagainBtn.interactive = true;
+playagainBtn.buttonMode = true;
+playagainBtn.visible = false;
+//Reset all the values
+playagainBtn.click = playagainBtn.tap = function() {
+    STAGE = 0;
+    restartStage();
+    stageText.text = "Stage 1: Fry";
+    stageText.style.stroke = "#000077";
+    STARTED = true;
+    playagainBtn.visible = false;
+    letsgoBtn.visible = true;
+    instructions.visible = false;
+}//restart
 
 
 
@@ -304,6 +313,7 @@ message2.x = 40;
 message2.y = 40;
 //add contents to the instructions
 instructions.addChild(letsgoBtn); //add restart button
+instructions.addChild(playagainBtn); //add restart button
 instructions.addChild(message2); //add cause of death
 instructions.visible = false;
 stage.addChild(instructions); //add dialog to stage
@@ -375,7 +385,8 @@ function animate() {
                                             stageText.text = "Life cycle complete";
                                             stageText.style.stroke = "#550055";
                                             message2.text = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
-                                            letsgoBtn.text = "Restart?"
+                                            letsgoBtn.visible = false;
+                                            playagainBtn.visible = true;
                                             break;
                                     }//update Stage text
 
@@ -386,7 +397,13 @@ function animate() {
 
                             }//check if met food requirements to start new stage
 
-                            foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+                            if(STAGE == 3) {
+                                foodText.text = "Food: " + FOOD_REQ[STAGE-1] + "/" + FOOD_REQ[STAGE-1];
+                            }//update text only when needed
+                            else{
+                                foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+                            }
+
                             OBSTACLES[i].visible = false;
                             OBSTACLES.splice(i, 1);
                             spawnObstacle();
@@ -430,6 +447,7 @@ function animate() {
             }//switch
 
             STARTED = false;
+            restartBtn.visible = true;
             warning.visible = false;
             summary.visible = true;
         }//check if died
