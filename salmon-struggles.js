@@ -21,7 +21,8 @@ var OBST_HEIGHT = 100;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [2, 2, 2];
+var FOOD_REQ = [5, 10, 15];
+var LOW_FLOW = false;
 
 /**********************************
  * Renderer and Stage setup
@@ -280,6 +281,15 @@ warning.x = 170;
 warning.y = 50;
 stage.addChild(warning);
 
+//Low Flow warning text
+var lowflowText = new PIXI.Text("Low Flow!", hudStyle);
+lowflowText.x = 350;
+lowflowText.y = 5;
+lowflowText.style.stroke = '#FF0000';
+lowflowText.style.strokeThickness = 4;
+lowflowText.visible = false;
+stage.addChild(lowflowText);
+
 /**********************************
  * Containers for text
  **********************************/
@@ -347,7 +357,22 @@ function animate() {
                     OBSTACLES.shift();
                 }//remove obstacles that have passed
 
-                OBSTACLES[i].position.x -= 4;
+                //Low flow logic for second stage
+
+                if(STAGE == 1 && (FOOD_COUNT % 3 == 0)) {
+                    LOW_FLOW = true;
+                    lowflowText.visible = true;
+                }//turn on low flow
+                else {
+                    LOW_FLOW = false;
+                    lowflowText.visible = false;
+                }//turn off low flow
+
+
+                if(LOW_FLOW && (STAGE == 1))
+                    OBSTACLES[i].position.x -= 2;
+                else
+                    OBSTACLES[i].position.x -= 4;
 
                 if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= FISH_OFFSET){
                     spawnObstacle();
@@ -374,7 +399,7 @@ function animate() {
                                         case(1):
                                             stageText.text = "Stage 2: Smolt";
                                             stageText.style.stroke = "#007700";
-                                            message2.text = "Sam is now a Smolt, a teenage Salmon.\n\nHe now needs to avoid big fish, nets, and high temperatures.\n\nEat 10 pieces of food to survive.";
+                                            message2.text = "Sam is now a Smolt, a teenage Salmon.\n\nHe now needs to avoid big fish, low water flow, nets, and high temperatures.\n\nEat 10 pieces of food to survive.";
                                             break;
                                         case(2):
                                             stageText.text = "Stage 3: Adult";
@@ -492,6 +517,8 @@ function spawnObstacle(){
             break;
         case 1:
             makeDebris();
+            if(STAGE == 2)
+                makeFood();
             break;
         case 2:
             makeDam();
