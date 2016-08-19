@@ -2,6 +2,11 @@
  * Created by Lawrence on 8/11/2016.
  */
 
+/**
+ * TODO
+ * Create proper resetart button
+ */
+
 /**********************************
  * Global Variables
  **********************************/
@@ -21,7 +26,7 @@ var OBST_HEIGHT = 100;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [5, 10, 15]
+var FOOD_REQ = [5, 10, 15];
 
 /**********************************
  * Renderer and Stage setup
@@ -40,13 +45,12 @@ stage
     .on('touchstart', onMouseDown)
 
 function onMouseDown(){
-    if(!STARTED && !DEAD){
-        STARTED = true;
+    if(!STARTED && !DEAD && OBSTACLES.length < 1){
         title.visible = false;
+        instructions.visible = true;
         clickText.visible = false;
         makeFood(); //add a starting obstacle
-        stageText.text = "Stage 1: Fry";
-        stageText.style.stroke = "#000077";
+        stageText.visible = true;
         foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
     }//not yet started game
     else if (STARTED) {
@@ -202,32 +206,41 @@ var hudStyle = {
  **********************************/
 var restartBtn = new PIXI.Text("Restart Stage", style);
 restartBtn.x = 130;
-restartBtn.y = 140;
+restartBtn.y = 160;
 restartBtn.interactive = true;
 restartBtn.buttonMode = true;
 //Reset all the values
 restartBtn.click = restartBtn.tap = function() {
-    fish.position.y = HEIGHT/2;
-    fish.speedY = FISH_SPEED;
-    fish.airTime = 0;
-    fish.rotation = 0;
-    summary.visible = false;
-    obst.children = [];
-    OBSTACLES = [];
-    CAUSE = 0;
-    STARTED = true;
-    DEAD = false;
-    FOOD_COUNT = 0;
-    foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
-    warning.visible = true;
-    makeFood();
+    restartStage();
 }//restart
 
 /**********************************
- * Text and Messages
+ * Let's Go! Button
  **********************************/
+var letsgoBtn = new PIXI.Text("Let's Go!", style);
+letsgoBtn.x = 170;
+letsgoBtn.y = HEIGHT - 90;
+letsgoBtn.interactive = true;
+letsgoBtn.buttonMode = true;
+
+letsgoBtn.click = letsgoBtn.tap = function() {
 
 
+    if(letsgoBtn.txt == "Restart?"){
+        letsgoBtn.txt = "Let's Go!";
+        STAGE = 0;
+        restartStage();
+    }//set text back after restart
+
+    STARTED = true;
+    instructions.visible = false;
+}//user clicked button
+
+
+
+/**********************************
+ * Texts
+ **********************************/
 //Title
 var title = new PIXI.Text('Salmon Struggles', titleStyle);
 title.x = 80;
@@ -246,9 +259,10 @@ foodText.y = 5;
 stage.addChild(foodText);
 
 //Stage text
-var stageText = new PIXI.Text("", hudStyle);
+var stageText = new PIXI.Text("Stage 1: Fry", hudStyle);
 stageText.x = 5;
 stageText.y = 5;
+stageText.visible = false;
 stage.addChild(stageText);
 
 //Bird Alert warning text
@@ -257,12 +271,15 @@ warning.x = 170;
 warning.y = 50;
 stage.addChild(warning);
 
+/**********************************
+ * Containers for text
+ **********************************/
 //post death summary container
 var summary = new PIXI.Graphics();
 //rectangle
 summary.lineStyle(2, 0xFF00FF, 1);
 summary.beginFill(0xFF00BB, 0.35);
-summary.drawRoundedRect(30, 35, WIDTH - 60, 130, 15);
+summary.drawRoundedRect(30, 35, WIDTH - 60, 150, 15);
 summary.endFill();
 //text placed in the summary container
 var message = new PIXI.Text("", messageStyle);
@@ -274,6 +291,22 @@ summary.addChild(message); //add cause of death
 summary.visible = false;
 stage.addChild(summary); //add dialog to stage
 
+//instructions container
+var instructions = new PIXI.Graphics();
+//rectangle
+instructions.lineStyle(2, 0x3366FF, 1);
+instructions.beginFill(0x3399FF, 0.35);
+instructions.drawRoundedRect(30, 35, WIDTH - 60, HEIGHT - 100, 15);
+instructions.endFill();
+//text placed in the instructions container
+var message2 = new PIXI.Text("This is the story of Sam the Salmon. Baby Salmon, Fry, Salmon eat smaller fish and bugs to get bigger.\n\nEat 5 pieces of food while avoiding the debris.", messageStyle);
+message2.x = 40;
+message2.y = 40;
+//add contents to the instructions
+instructions.addChild(letsgoBtn); //add restart button
+instructions.addChild(message2); //add cause of death
+instructions.visible = false;
+stage.addChild(instructions); //add dialog to stage
 
 
 
@@ -319,25 +352,39 @@ function animate() {
                         }//hit into something bad
                         else{
                             FOOD_COUNT += 1;
-
+                            console.log(STAGE);
                             if(FOOD_COUNT == FOOD_REQ[STAGE]) {
+
                                 FOOD_COUNT = 0;
-                                if (STAGE < 2) {
+
+                                if (STAGE < 3) {
                                     STAGE += 1;
 
                                     switch(STAGE){
                                         case(1):
                                             stageText.text = "Stage 2: Smolt";
                                             stageText.style.stroke = "#007700";
+                                            message2.text = "Sam is now a Smolt, a teenage Salmon.\n\nHe now needs to avoid big fish, nets, and high temperatures.\n\nEat 10 pieces of food to survive.";
                                             break;
                                         case(2):
                                             stageText.text = "Stage 3: Adult";
                                             stageText.style.stroke = "#770000";
+                                            message2.text = "Sam is now an adult. Salmon swim back to where to they were born to reproduce.\n\n Sam now needs to face dams.\n\n Eat 15 pieces of food to survive.";
+                                            break;
+                                        case(3):
+                                            stageText.text = "Life cycle complete";
+                                            stageText.style.stroke = "#550055";
+                                            message2.text = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
+                                            letsgoBtn.text = "Restart?"
                                             break;
                                     }//update Stage text
 
                                 }//stage up
-                            }//check if met food requirements
+
+                                STARTED = false;
+                                instructions.visible = true; //show instructions
+
+                            }//check if met food requirements to start new stage
 
                             foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
                             OBSTACLES[i].visible = false;
@@ -407,20 +454,20 @@ function moveBackground(){
 
 function spawnObstacle(){
     //add new random obstacles
-    var num_types = 0;
+    var numTypes = 0;
     switch(STAGE){
         case 0:
-            num_types = 2;
+            numTypes = 2;
             break;
         case 1:
-            num_types = 2;
+            numTypes = 2;
             break;
         case 2:
-            num_types = 3;
+            numTypes = 3;
             break;
     }//switch
 
-    var selection = Math.floor(num_types * Math.random());
+    var selection = Math.floor(numTypes * Math.random());
     switch(selection) {
         case 0:
             makeFood();
@@ -435,16 +482,16 @@ function spawnObstacle(){
 }//spawn random obstacle
 
 function makeFood(){
-    console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
+    //console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
     var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-    console.log("added food at " + rand_y);
+    //console.log("added food at " + rand_y);
     addNewObs(WIDTH, rand_y, 32, 32, "Food");
 }//make food
 
 function makeDebris(){
-    console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
+    //console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
     var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-    console.log("added debris at " + rand_y);
+    //console.log("added debris at " + rand_y);
     addNewObs(WIDTH, rand_y, OBST_WIDTH, OBST_HEIGHT, "Debris");
 }//make Debris
 
@@ -453,3 +500,20 @@ function makeDam(){
     addNewObs(WIDTH+OBST_WIDTH, HEIGHT/2 + 150, OBST_WIDTH, HEIGHT, "Dam");
     addNewObs(WIDTH+OBST_WIDTH*2, HEIGHT/2 + 70, OBST_WIDTH, HEIGHT, "Dam");
 }//make Dam
+
+function restartStage(){
+    fish.position.y = HEIGHT/2;
+    fish.speedY = FISH_SPEED;
+    fish.airTime = 0;
+    fish.rotation = 0;
+    summary.visible = false;
+    obst.children = [];
+    OBSTACLES = [];
+    CAUSE = 0;
+    STARTED = true;
+    DEAD = false;
+    FOOD_COUNT = 0;
+    foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+    warning.visible = true;
+    makeFood();
+}//restart stage
