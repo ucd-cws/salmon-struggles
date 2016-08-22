@@ -21,8 +21,11 @@ var OBST_HEIGHT = 100;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [5, 10, 15];
+//var FOOD_REQ = [5, 10, 15];
+var FOOD_REQ = [2, 2, 2];
 var LOW_FLOW = false;
+var WAIT = 0; //used to prevent user from clicking when instructions opened
+var WAIT_THRESHOLD = 35;//how long to wait
 
 /**********************************
  * Renderer and Stage setup
@@ -220,8 +223,11 @@ letsgoBtn.interactive = true;
 letsgoBtn.buttonMode = true;
 
 letsgoBtn.click = letsgoBtn.tap = function() {
-    STARTED = true;
-    instructions.visible = false;
+    if (WAIT > WAIT_THRESHOLD) {
+        STARTED = true;
+        instructions.visible = false;
+        WAIT = 0;
+    }//check wait
 }//user clicked button
 
 /**********************************
@@ -236,14 +242,17 @@ playagainBtn.buttonMode = true;
 playagainBtn.visible = false;
 //Reset all the values
 playagainBtn.click = playagainBtn.tap = function() {
-    STAGE = 0;
-    restartStage();
-    stageText.text = "Stage 1: Fry";
-    stageText.style.stroke = "#000077";
-    STARTED = true;
-    playagainBtn.visible = false;
-    letsgoBtn.visible = true;
-    instructions.visible = false;
+    if (WAIT > WAIT_THRESHOLD) {
+        WAIT = 0;
+        STAGE = 0;
+        restartStage();
+        stageText.text = "Stage 1: Fry";
+        stageText.style.stroke = "#000077";
+        STARTED = true;
+        playagainBtn.visible = false;
+        letsgoBtn.visible = true;
+        instructions.visible = false;
+    }//check wait
 }//restart
 
 
@@ -478,6 +487,10 @@ function animate() {
         }//check if died
 
     }//game started
+
+    if(!STARTED && instructions.visible == true){
+        WAIT++;
+    }//wait
 
     //render the container
     renderer.render(stage);
