@@ -20,8 +20,8 @@ var DAM_WIDTH = 80;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-//var FOOD_REQ = [5, 10, 15];
-var FOOD_REQ = [2, 2, 2];
+var FOOD_REQ = [5, 10, 15];
+//var FOOD_REQ = [2, 2, 2];
 var LOW_FLOW = false;
 var WAIT = 0; //used to prevent user from clicking when instructions opened
 var WAIT_THRESHOLD = 35;//how long to wait
@@ -53,12 +53,12 @@ function onMouseDown(){
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
+        if (fish.rotation > -0.9) {
+            fish.rotation -= 0.4;
+        }//limit fish rotation
+        
     }//game started
 };//click
-
-stage.mouseUp = stage.onTouchEnd = function(){
-    down = false;
-}//release
 
 /**********************************
  * Water Background
@@ -95,14 +95,15 @@ stage.addChild(tilingGround);
 /**********************************
  * Fish
  **********************************/
-var fish = PIXI.Sprite.fromImage('textures/bunny.png');
+var fish = PIXI.Sprite.fromImage('textures/salmon.png');
 fish.position.set(FISH_OFFSET,HEIGHT/2);
 fish.interactive = true;
 fish.speedY = FISH_SPEED;
 fish.downRate = DESCENT_RATE;
 fish.airTime = 0;
-fish.pivot.x = 13;
-fish.pivot.y = 18;
+
+fish.pivot.x = 61;
+fish.pivot.y = 24;
 stage.addChild(fish);
 
 /**********************************
@@ -436,7 +437,6 @@ function animate() {
                         }//hit into something bad
                         else{
                             FOOD_COUNT += 1;
-                            console.log(STAGE);
                             if(FOOD_COUNT == FOOD_REQ[STAGE]) {
 
                                 FOOD_COUNT = 0;
@@ -538,7 +538,9 @@ function animate() {
 
 function descend(){
     fish.speedY -= fish.downRate;
-    fish.rotation += 0.1;
+    if(fish.rotation < 1) {
+        fish.rotation += 0.011;
+    }//limit fish descent
     fish.position.y -= fish.speedY;
 }//descend logic
 
@@ -580,6 +582,7 @@ function spawnObstacle(){
 }//spawn random obstacle
 
 function makeFood(){
+    //salmon eat
     var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
     addNewObs(WIDTH, rand_y, 32, 32, "Food");
 }//make food
@@ -604,13 +607,13 @@ function makeDebris(){
     var selection = Math.floor(numTypes * Math.random());
     switch(selection) {
         case 0:
-            addNewObs(WIDTH, rand_y, 130, 130, "Net");
+            addNewObs(WIDTH, rand_y, 130, 123, "Net");
             break;
         case 1:
-            addNewObs(WIDTH, rand_y, 130, 130, "Net");
+            addNewObs(WIDTH, rand_y, 130, 123, "Net");
             break;
         case 2:
-            addNewObs(WIDTH, rand_y, 130, 130, "Net");
+            addNewObs(WIDTH, rand_y, 130, 123, "Net");
             break;
     }//switch
 
