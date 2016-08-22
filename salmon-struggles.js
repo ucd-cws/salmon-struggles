@@ -16,8 +16,7 @@ var FISH_OFFSET = 100; //distance of fish from left of screen
 var WATER_LEVEL = 100; //where water level is
 var GROUND_HEIGHT = 50;
 var OBSTACLES = []; //obstacles array
-var OBST_WIDTH = 80;
-var OBST_HEIGHT = 100;
+var DAM_WIDTH = 80;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
@@ -113,23 +112,65 @@ var obst = new PIXI.Container();
 stage.addChild(obst);
 
 function addNewObs(x, y, w, h, type){
-    var obj = new PIXI.Texture.fromImage('textures/dam.png');
-    var tilingDam = new PIXI.extras.TilingSprite(obj, WIDTH, HEIGHT);
-    tilingDam.width = w;
-    tilingDam.height = h;
-    tilingDam.anchor.x = 0.5;
-    tilingDam.anchor.y = 0.5;
+    if(type == "Dam") {
+        var obj = new PIXI.Texture.fromImage('textures/dam.png');
 
-    tilingDam.position.y = y;
-    tilingDam.position.x = x + w;
+        var tilingDam = new PIXI.extras.TilingSprite(obj, WIDTH, HEIGHT);
+        tilingDam.width = w;
+        tilingDam.height = h;
+        tilingDam.anchor.x = 0.5;
+        tilingDam.anchor.y = 0.5;
 
-    tilingDam.type = type; //type used to determine death
+        tilingDam.position.y = y;
+        tilingDam.position.x = x + w;
 
-    //Add to container
-    obst.addChild(tilingDam);
+        tilingDam.type = type; //type used to determine death
 
-    //Push to array so we can track it later
-    OBSTACLES.push(tilingDam);
+        //Add to container
+        obst.addChild(tilingDam);
+
+        //Push to array so we can track it later
+        OBSTACLES.push(tilingDam);
+    }//dam
+    else if(type == "Net"){
+        var net = new PIXI.Sprite.fromImage('textures/net.png');
+        net.position.x = x + w;
+        net.position.y = y;
+        net.width = w;
+        net.height = h;
+        //net.interactive = true;
+        net.type = type;
+        net.anchor.x = 0.5;
+        net.anchor.y = 0.5;
+        //stage.addChild(net);
+
+        //Add to container
+        obst.addChild(net);
+
+        //Push to array so we can track it later
+        OBSTACLES.push(net);
+    }//net
+    else if(type == "Food"){
+        var obj = new PIXI.Texture.fromImage('textures/dam.png');
+
+        var tilingDam = new PIXI.extras.TilingSprite(obj, WIDTH, HEIGHT);
+        tilingDam.width = w;
+        tilingDam.height = h;
+        tilingDam.anchor.x = 0.5;
+        tilingDam.anchor.y = 0.5;
+
+        tilingDam.position.y = y;
+        tilingDam.position.x = x + w;
+
+        tilingDam.type = type; //type used to determine death
+
+        //Add to container
+        obst.addChild(tilingDam);
+
+        //Push to array so we can track it later
+        OBSTACLES.push(tilingDam);
+    }
+
 }//add new obstacles
 
 
@@ -362,8 +403,8 @@ function animate() {
 
             for (var i = 0; i < OBSTACLES.length; i++) {
 
-                if(OBSTACLES[i].x < -OBST_WIDTH*2){
-                    OBSTACLES.shift();
+                if(OBSTACLES[i].x < (OBSTACLES[i].width*-2)){
+                    OBSTACLES.splice(i, 1);
                 }//remove obstacles that have passed
 
                 //Low flow logic for second stage
@@ -385,10 +426,9 @@ function animate() {
 
                 if(i == OBSTACLES.length - 1 && OBSTACLES[i].position.x <= FISH_OFFSET){
                     spawnObstacle();
-
                 }//check if its time to add new obstacle by checking last obstacle's position
 
-                if(OBSTACLES[i].position.x + OBST_WIDTH/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBST_WIDTH/2 <= FISH_OFFSET + fish.width/2){
+                if(OBSTACLES[i].position.x + OBSTACLES[i].width/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBSTACLES[i].width/2 <= FISH_OFFSET + fish.width/2){
                     if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBSTACLES[i].height/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBSTACLES[i].height/2){
                         if(OBSTACLES[i].type != "Food"){
                             CAUSE = OBSTACLES[i].type;
@@ -475,8 +515,8 @@ function animate() {
                 case "Dam":
                     message.text = "You swam headfirst into a Dam."
                     break;
-                case "Debris":
-                    message.text = "You swam into debris."
+                case "Net":
+                    message.text = "You swam into a Net."
                     break;
             }//switch
 
@@ -540,23 +580,48 @@ function spawnObstacle(){
 }//spawn random obstacle
 
 function makeFood(){
-    //console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
     var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-    //console.log("added food at " + rand_y);
     addNewObs(WIDTH, rand_y, 32, 32, "Food");
 }//make food
 
 function makeDebris(){
-    //console.log((HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2));
     var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-    //console.log("added debris at " + rand_y);
-    addNewObs(WIDTH, rand_y, OBST_WIDTH, OBST_HEIGHT, "Debris");
+
+    //add new random obstacles
+    var numTypes = 0;
+    switch(STAGE){
+        case 0:
+            numTypes = 1;
+            break;
+        case 1:
+            numTypes = 3;
+            break;
+        case 2:
+            numTypes = 1;
+            break;
+    }//switch
+
+    var selection = Math.floor(numTypes * Math.random());
+    switch(selection) {
+        case 0:
+            addNewObs(WIDTH, rand_y, 130, 130, "Net");
+            break;
+        case 1:
+            addNewObs(WIDTH, rand_y, 130, 130, "Net");
+            break;
+        case 2:
+            addNewObs(WIDTH, rand_y, 130, 130, "Net");
+            break;
+    }//switch
+
+    //create random predators, nets, and temperature fluctuations
+
 }//make Debris
 
 function makeDam(){
-    addNewObs(WIDTH, HEIGHT/2 + 200, OBST_WIDTH, HEIGHT, "Dam");
-    addNewObs(WIDTH+OBST_WIDTH, HEIGHT/2 + 150, OBST_WIDTH, HEIGHT, "Dam");
-    addNewObs(WIDTH+OBST_WIDTH*2, HEIGHT/2 + 70, OBST_WIDTH, HEIGHT, "Dam");
+    addNewObs(WIDTH, HEIGHT/2 + 200, DAM_WIDTH, HEIGHT, "Dam");
+    addNewObs(WIDTH+DAM_WIDTH, HEIGHT/2 + 150, DAM_WIDTH, HEIGHT, "Dam");
+    addNewObs(WIDTH+DAM_WIDTH*2, HEIGHT/2 + 70, DAM_WIDTH, HEIGHT, "Dam");
 }//make Dam
 
 function restartStage(){
