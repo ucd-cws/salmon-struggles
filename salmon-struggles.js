@@ -53,10 +53,10 @@ function onMouseDown(){
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
-        if (fish.rotation > -0.9) {
+        if (fish.rotation > -0.7) {
             fish.rotation -= 0.4;
         }//limit fish rotation
-        
+
     }//game started
 };//click
 
