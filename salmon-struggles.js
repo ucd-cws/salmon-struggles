@@ -20,11 +20,13 @@ var DAM_WIDTH = 80;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [5, 10, 15];
-//var FOOD_REQ = [2, 2, 2];
+//var FOOD_REQ = [5, 10, 15];
+var FOOD_REQ = [2, 2, 2];
 var LOW_FLOW = false;
 var WAIT = 0; //used to prevent user from clicking when instructions opened
 var WAIT_THRESHOLD = 35;//how long to wait
+var BUFFER_X = 0;
+var BUFFER_Y = 10; //used to fine tune collision detection
 
 /**********************************
  * Renderer and Stage setup
@@ -53,8 +55,8 @@ function onMouseDown(){
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
-        if (fish.rotation > -0.7) {
-            fish.rotation -= 0.4;
+        if (fish.rotation > -0.3) {
+            fish.rotation -= 0.2;
         }//limit fish rotation
 
     }//game started
@@ -139,11 +141,9 @@ function addNewObs(x, y, w, h, type){
         net.position.y = y;
         net.width = w;
         net.height = h;
-        //net.interactive = true;
         net.type = type;
         net.anchor.x = 0.5;
         net.anchor.y = 0.5;
-        //stage.addChild(net);
 
         //Add to container
         obst.addChild(net);
@@ -152,24 +152,20 @@ function addNewObs(x, y, w, h, type){
         OBSTACLES.push(net);
     }//net
     else if(type == "Food"){
-        var obj = new PIXI.Texture.fromImage('textures/dam.png');
-
-        var tilingDam = new PIXI.extras.TilingSprite(obj, WIDTH, HEIGHT);
-        tilingDam.width = w;
-        tilingDam.height = h;
-        tilingDam.anchor.x = 0.5;
-        tilingDam.anchor.y = 0.5;
-
-        tilingDam.position.y = y;
-        tilingDam.position.x = x + w;
-
-        tilingDam.type = type; //type used to determine death
+        var food = new PIXI.Sprite.fromImage('textures/zooplankton.png');
+        food.position.x = x + w;
+        food.position.y = y;
+        food.width = w;
+        food.height = h;
+        food.type = type;
+        food.anchor.x = 0.5;
+        food.anchor.y = 0.5;
 
         //Add to container
-        obst.addChild(tilingDam);
+        obst.addChild(food);
 
         //Push to array so we can track it later
-        OBSTACLES.push(tilingDam);
+        OBSTACLES.push(food);
     }
 
 }//add new obstacles
@@ -429,8 +425,11 @@ function animate() {
                     spawnObstacle();
                 }//check if its time to add new obstacle by checking last obstacle's position
 
-                if(OBSTACLES[i].position.x + OBSTACLES[i].width/2 >= FISH_OFFSET - fish.width/2 && OBSTACLES[i].position.x - OBSTACLES[i].width/2 <= FISH_OFFSET + fish.width/2){
-                    if((fish.position.y - fish.height/2) < OBSTACLES[i].position.y + OBSTACLES[i].height/2 && (fish.position.y + fish.height/2) > OBSTACLES[i].position.y - OBSTACLES[i].height/2){
+                //if in hit range in x axis
+                if((OBSTACLES[i].position.x + OBSTACLES[i].width/2) >= (FISH_OFFSET - fish.width/2) && (OBSTACLES[i].position.x - OBSTACLES[i].width/2) <= (FISH_OFFSET + fish.width/2)){
+                    //if in hit range in y axis
+                    if((fish.position.y - fish.height/2 + BUFFER_Y) < (OBSTACLES[i].position.y + OBSTACLES[i].height/2) &&
+                        (fish.position.y + fish.height/2 - BUFFER_Y) > (OBSTACLES[i].position.y - OBSTACLES[i].height/2)){
                         if(OBSTACLES[i].type != "Food"){
                             CAUSE = OBSTACLES[i].type;
                             DEAD = true;
@@ -507,16 +506,16 @@ function animate() {
         if(DEAD){
             switch(CAUSE) {
                 case "Bird":
-                    message.text = "You were eaten by a hawk! Being in the air makes you a vulnerable target to birds.";
+                    message.text = "You were eaten by a Osprey! Being in the air makes you a vulnerable target to birds.";
                     break;
                 case "Ground":
                     message.text = "Death by cuttlefish."
                     break;
                 case "Dam":
-                    message.text = "You swam headfirst into a Dam."
+                    message.text = "You swam into a Dam!"
                     break;
                 case "Net":
-                    message.text = "You swam into a Net."
+                    message.text = "You swam into a Net!"
                     break;
             }//switch
 
@@ -538,8 +537,8 @@ function animate() {
 
 function descend(){
     fish.speedY -= fish.downRate;
-    if(fish.rotation < 1) {
-        fish.rotation += 0.011;
+    if(fish.rotation < 0.3) {
+        fish.rotation += 0.005;
     }//limit fish descent
     fish.position.y -= fish.speedY;
 }//descend logic
