@@ -20,17 +20,23 @@ var DAM_WIDTH = 80;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-var FOOD_REQ = [5, 10, 15];
+var FOOD_REQ = [5, 10, 10];
 //var FOOD_REQ = [2, 2, 2];
 var LOW_FLOW = false;
 var WAIT = 0; //used to prevent user from clicking when instructions opened
 var WAIT_THRESHOLD = 35;//how long to wait before user can press Buttons
 
-var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.";
+//Text
+var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.\n\nClick to swim up.";
 var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt need to eat Dragonfly Nymphs (babies), Stone Flies, and Worms.\n\nThis is also the time his scales fall off and he migrates to " +
     "the delta/ocean. He now needs to be aware of big fish and low water flow.\n\nEat 10 worms to survive.";
 var s3Text = "Sam is now an adult and managed to survive in the ocean. Salmon swim back to where to they were born to reproduce.\n\n Adult salmon eat other fish, squid, and shrimp. Sam also now needs to face dams.\n\n Eat 15 pieces of food to survive.";
 var endText = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
+
+//Swapping Textures
+var fryTexture = PIXI.Texture.fromImage('textures/fry.png');
+var smoltTexture = PIXI.Texture.fromImage('textures/smolt.png');
+var adultTexture = PIXI.Texture.fromImage('textures/adult.png');
 
 /**********************************
  * Renderer and Stage setup
@@ -101,7 +107,7 @@ stage.addChild(tilingGround);
 /**********************************
  * Fish
  **********************************/
-var fish = PIXI.Sprite.fromImage('textures/salmon.png');
+var fish = new PIXI.Sprite(fryTexture);
 fish.position.set(FISH_OFFSET,HEIGHT/2);
 fish.interactive = true;
 fish.speedY = FISH_SPEED;
@@ -313,6 +319,7 @@ playagainBtn.click = playagainBtn.tap = function() {
         WAIT = 0;
         STAGE = 0;
         restartStage();
+        fish.texture = fryTexture;
         stageText.text = "Stage 1: Fry";
         stageText.style.stroke = "#000077";
         STARTED = true;
@@ -493,11 +500,13 @@ function animate() {
 
                                     switch(STAGE){
                                         case(1):
+                                            fish.texture = smoltTexture;
                                             stageText.text = "Stage 2: Smolt";
                                             stageText.style.stroke = "#007700";
                                             message2.text = s2Text;
                                             break;
                                         case(2):
+                                            fish.texture = adultTexture;
                                             stageText.text = "Stage 3: Adult";
                                             stageText.style.stroke = "#770000";
                                             message2.text = s3Text;
