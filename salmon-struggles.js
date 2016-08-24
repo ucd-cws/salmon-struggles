@@ -20,13 +20,17 @@ var DAM_WIDTH = 80;
 var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
 var FOOD_COUNT = 0;
-//var FOOD_REQ = [5, 10, 15];
-var FOOD_REQ = [2, 2, 2];
+var FOOD_REQ = [5, 10, 15];
+//var FOOD_REQ = [2, 2, 2];
 var LOW_FLOW = false;
 var WAIT = 0; //used to prevent user from clicking when instructions opened
-var WAIT_THRESHOLD = 35;//how long to wait
-var BUFFER_X = 0;
-var BUFFER_Y = 10; //used to fine tune collision detection
+var WAIT_THRESHOLD = 35;//how long to wait before user can press Buttons
+
+var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.";
+var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt need to eat Dragonfly Nymphs (babies), Stone Flies, and Worms.\n\nThis is also the time his scales fall off and he migrates to " +
+    "the delta/ocean. He now needs to be aware of big fish and low water flow.\n\nEat 10 worms to survive.";
+var s3Text = "Sam is now an adult and managed to survive in the ocean. Salmon swim back to where to they were born to reproduce.\n\n Adult salmon eat other fish, squid, and shrimp. Sam also now needs to face dams.\n\n Eat 15 pieces of food to survive.";
+var endText = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
 
 /**********************************
  * Renderer and Stage setup
@@ -55,7 +59,7 @@ function onMouseDown(){
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
-        if (fish.rotation > -0.3) {
+        if (fish.rotation > -0.2) {
             fish.rotation -= 0.2;
         }//limit fish rotation
 
@@ -152,7 +156,16 @@ function addNewObs(x, y, w, h, type){
         OBSTACLES.push(net);
     }//net
     else if(type == "Food"){
-        var food = new PIXI.Sprite.fromImage('textures/zooplankton.png');
+        if(STAGE == 0){
+            var food = new PIXI.Sprite.fromImage('textures/zooplankton.png');
+        }//zooplankton as food
+        else if(STAGE == 1){
+            var food = new PIXI.Sprite.fromImage('textures/worm.png');
+        }//worm as food
+        else{
+            var food = new PIXI.Sprite.fromImage('textures/zooplankton.png');
+        }//
+
         food.position.x = x + w;
         food.position.y = y;
         food.width = w;
@@ -166,6 +179,22 @@ function addNewObs(x, y, w, h, type){
 
         //Push to array so we can track it later
         OBSTACLES.push(food);
+    }
+    else if(type == "Striped Bass"){
+        var sBass = new PIXI.Sprite.fromImage('textures/striped_bass.png');
+        sBass.position.x = x + w;
+        sBass.position.y = y;
+        sBass.width = w;
+        sBass.height = h;
+        sBass.type = type;
+        sBass.anchor.x = 0.5;
+        sBass.anchor.y = 0.5;
+
+        //Add to container
+        obst.addChild(sBass);
+
+        //Push to array so we can track it later
+        OBSTACLES.push(sBass);
     }
 
 }//add new obstacles
@@ -216,7 +245,7 @@ var style = {
 };
 
 var messageStyle = {
-    font : 'bold 30px Arial',
+    font : 'bold 24px Arial',
     fill : '#EEEEEE',
     stroke : '#333333',
     strokeThickness : 5,
@@ -365,7 +394,7 @@ instructions.beginFill(0x3399FF, 0.35);
 instructions.drawRoundedRect(30, 35, WIDTH - 60, HEIGHT - 100, 15);
 instructions.endFill();
 //text placed in the instructions container
-var message2 = new PIXI.Text("This is the story of Sam the Salmon. Baby Salmon, Fry, Salmon eat smaller fish and bugs to get bigger.\n\nEat 5 pieces of food while avoiding the debris.", messageStyle);
+var message2 = new PIXI.Text(s1Text, messageStyle);
 message2.x = 40;
 message2.y = 40;
 //add contents to the instructions
@@ -425,8 +454,27 @@ function animate() {
                     spawnObstacle();
                 }//check if its time to add new obstacle by checking last obstacle's position
 
+
+                var BUFFER_X = 0;//used to fine tune collision detection
+                var BUFFER_Y = 0;
+                //fine tune collision detection based on current object type
+                switch(OBSTACLES[i].type){
+                    case "Net":
+                        BUFFER_X = 50;
+                        BUFFER_Y = 50;
+                        message.text = "You swam into a Net!"
+                        break;
+                    case "Striped Bass":
+                        BUFFER_X = 15;
+                        BUFFER_Y = 30;
+                        message.text = "You were eaten by a Striped Bass!"
+                        break;
+                }//switch
+
+
                 //if in hit range in x axis
-                if((OBSTACLES[i].position.x + OBSTACLES[i].width/2) >= (FISH_OFFSET - fish.width/2) && (OBSTACLES[i].position.x - OBSTACLES[i].width/2) <= (FISH_OFFSET + fish.width/2)){
+                if((OBSTACLES[i].position.x + OBSTACLES[i].width/2 - BUFFER_X) >= (fish.position.x - fish.width/2) &&
+                    (OBSTACLES[i].position.x - OBSTACLES[i].width/2 + BUFFER_X) <= (fish.position.x + fish.width/2)){
                     //if in hit range in y axis
                     if((fish.position.y - fish.height/2 + BUFFER_Y) < (OBSTACLES[i].position.y + OBSTACLES[i].height/2) &&
                         (fish.position.y + fish.height/2 - BUFFER_Y) > (OBSTACLES[i].position.y - OBSTACLES[i].height/2)){
@@ -447,17 +495,17 @@ function animate() {
                                         case(1):
                                             stageText.text = "Stage 2: Smolt";
                                             stageText.style.stroke = "#007700";
-                                            message2.text = "Sam is now a Smolt, a teenage Salmon.\n\nHe now needs to avoid big fish, low water flow, nets, and high temperatures.\n\nEat 10 pieces of food to survive.";
+                                            message2.text = s2Text;
                                             break;
                                         case(2):
                                             stageText.text = "Stage 3: Adult";
                                             stageText.style.stroke = "#770000";
-                                            message2.text = "Sam is now an adult. Salmon swim back to where to they were born to reproduce.\n\n Sam now needs to face dams.\n\n Eat 15 pieces of food to survive.";
+                                            message2.text = s3Text;
                                             break;
                                         case(3):
                                             stageText.text = "Life cycle complete";
                                             stageText.style.stroke = "#550055";
-                                            message2.text = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
+                                            message2.text = endText;
                                             letsgoBtn.visible = false;
                                             playagainBtn.visible = true;
                                             break;
@@ -517,6 +565,9 @@ function animate() {
                 case "Net":
                     message.text = "You swam into a Net!"
                     break;
+                case "Striped Bass":
+                    message.text = "You were eaten by a Striped Bass!"
+                    break;
             }//switch
 
             STARTED = false;
@@ -537,8 +588,8 @@ function animate() {
 
 function descend(){
     fish.speedY -= fish.downRate;
-    if(fish.rotation < 0.3) {
-        fish.rotation += 0.005;
+    if(fish.rotation < 0.2) {
+        fish.rotation += 0.004;
     }//limit fish descent
     fish.position.y -= fish.speedY;
 }//descend logic
@@ -581,7 +632,6 @@ function spawnObstacle(){
 }//spawn random obstacle
 
 function makeFood(){
-    //salmon eat
     var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
     addNewObs(WIDTH, rand_y, 32, 32, "Food");
 }//make food
@@ -609,7 +659,7 @@ function makeDebris(){
             addNewObs(WIDTH, rand_y, 130, 123, "Net");
             break;
         case 1:
-            addNewObs(WIDTH, rand_y, 130, 123, "Net");
+            addNewObs(WIDTH, rand_y, 204, 96, "Striped Bass");
             break;
         case 2:
             addNewObs(WIDTH, rand_y, 130, 123, "Net");
