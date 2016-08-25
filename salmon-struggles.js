@@ -2,12 +2,14 @@
  * Created by Lawrence on 8/11/2016.
  */
 
-/**
- * TODO:
- * Have stage for adult and stage: eat 5 shrimp
- * Have stage for spawning: jump over 5 dams
- */
 
+/**
+ * DEBUG MODE
+ * Debug offers only 2 food requirements per stage
+ * Press up arrow to feed the fish. However, the last food must be eaten manually.
+ * Debug mode is good for showing the whole game in a short amount of time.
+ */
+var DEBUG = false;
 
 /**********************************
  * Global Variables
@@ -24,11 +26,16 @@ var WATER_LEVEL = 100; //where water level is
 var GROUND_HEIGHT = 50;
 var OBSTACLES = []; //obstacles array
 var DAM_WIDTH = 80;
-var AIR_THRESHOLD = 140; //time units player can stay above water
+var AIR_THRESHOLD = 130; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult, Spawning Adult)
 var FOOD_COUNT = 0;
-//var FOOD_REQ = [5, 5, 5];
-var FOOD_REQ = [2, 2, 2];
+if(DEBUG){
+    var FOOD_REQ = [2, 2, 2];
+}
+else{
+    var FOOD_REQ = [5, 5, 5];
+}
+
 var LOW_FLOW = false;
 var WAIT = 0; //used to prevent user from clicking when instructions opened
 var WAIT_THRESHOLD = 35;//how long to wait before user can press Buttons
@@ -80,7 +87,7 @@ function onMouseDown(){
         clickText.visible = false;
         makeDebris(); //add a starting obstacle
         stageText.visible = true;
-        foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+        updateFoodText();
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
@@ -481,7 +488,7 @@ function animate() {
 
                     if(OBSTACLES[i].type == "Dam") {
                         DAMS_JUMPED++;
-                        foodText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
+                        updateFoodText();
 
                         if (DAMS_JUMPED/3 == DAMS_REQ) {
                             stageText.text = "Life cycle complete";
@@ -600,7 +607,6 @@ function animate() {
                                             fish.texture = spawningAdultTexture;
                                             stageText.text = "Stage 4: Spawning";
                                             stageText.style.stroke = "#990000";
-                                            foodText.text = "Dams Jumped: 0" + "/" + DAMS_REQ;
                                             message2.text = s4Text;
                                             break;
                                     }//update Stage text
@@ -610,16 +616,14 @@ function animate() {
                                 //reset obstacles
                                 obst.children = [];
                                 OBSTACLES = [];
+                                fish.speedY = FISH_SPEED;
 
                                 STARTED = false;
                                 instructions.visible = true; //show instructions
 
                             }//check if met food requirements to start new stage
 
-                            if(STAGE != SPAWNING_ADULT) {
-                                foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
-                            }//if
-
+                            updateFoodText();
                             OBSTACLES[i].visible = false;
                             OBSTACLES.splice(i, 1);
                             spawnObstacle();
@@ -798,15 +802,19 @@ function restartStage(){
     DEAD = false;
     FOOD_COUNT = 0;
     DAMS_JUMPED = 0;
-    if(STAGE != SPAWNING_ADULT) {
-        foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
-    }//display food
-    else{
-        foodText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
-    }//display dams jumped
+    updateFoodText();
     warning.visible = true;
     makeDebris();
 }//restart stage
+
+function updateFoodText(){
+    if(STAGE != SPAWNING_ADULT)
+        foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+    else
+        foodText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
+
+}
+
 
 
 function keyboard(keyCode) {
@@ -845,5 +853,8 @@ function keyboard(keyCode) {
 }
 var up = keyboard(38);
 up.press = function() {
-    FOOD_COUNT++;
+    if(DEBUG) {
+        FOOD_COUNT++;
+        updateFoodText();
+    }
 };
