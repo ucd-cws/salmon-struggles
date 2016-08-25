@@ -25,7 +25,7 @@ var GROUND_HEIGHT = 50;
 var OBSTACLES = []; //obstacles array
 var DAM_WIDTH = 80;
 var AIR_THRESHOLD = 130; //time units player can stay above water
-var STAGE = 0; //what stage player is on (Fry, Smolt, Adult)
+var STAGE = 0; //what stage player is on (Fry, Smolt, Adult, Spawning Adult)
 var FOOD_COUNT = 0;
 //var FOOD_REQ = [5, 5, 5];
 var FOOD_REQ = [2, 2, 2];
@@ -35,10 +35,15 @@ var WAIT_THRESHOLD = 35;//how long to wait before user can press Buttons
 var DAMS_JUMPED = 0;
 var DAMS_REQ = 5; //dams needed to jump over to make it to spawning grounds
 
+//Stages Macros
+var FRY = 0;
+var SMOLT = 1;
+var ADULT = 2;
+var SPAWNING_ADULT = 3;
 
 //Text
-var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.\n\nClick to swim up.";
-var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt need to eat Dragonfly Nymphs (babies), Stone Flies, and Worms.\n\nThis is also the time his scales fall off and he migrates to " +
+var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.\n\n- Keep clicking to swim upwards -";
+var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt need to eat Dragonfly Nymphs (babies), Stone Flies, and Worms.\n\nThis is also the time his scales change and he migrates to " +
     "the delta/ocean. He now needs to be aware of big fish, hooks, and low water flow.\n\nEat 5 worms to survive.";
 var s3Text = "Sam is now an adult and managed to survive in the ocean. Salmon swim back to the freshwater where to they were born to reproduce. Sam developed a hooked jaw (Kype) and his skin turned red to notify his readiness to spawn. \n\n Adult salmon eat other fish, squid, and shrimp but they do not eat during spawning season. Sam also now needs to face dams.\n\n Jump over 5 Dams to make it home.";
 var endText = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
@@ -47,6 +52,7 @@ var endText = "Sam made it back to where he was born and reproduces with a femal
 var fryTexture = PIXI.Texture.fromImage('textures/fry.png');
 var smoltTexture = PIXI.Texture.fromImage('textures/smolt.png');
 var adultTexture = PIXI.Texture.fromImage('textures/adult.png');
+var spawningAdultTexture = PIXI.Texture.fromImage('textures/adult2.png');
 var surface = PIXI.Texture.fromImage('textures/sky.png');
 var surface2 = PIXI.Texture.fromImage('textures/sky2.png');
 
@@ -174,15 +180,20 @@ function addNewObs(x, y, w, h, type){
         OBSTACLES.push(net);
     }//net
     else if(type == "Food"){
-        if(STAGE == 0){
+        if(STAGE == FRY){
             var food = new PIXI.Sprite.fromImage('textures/zooplankton.png');
         }//zooplankton as food
-        else if(STAGE == 1){
+        else if(STAGE == SMOLT){
             var food = new PIXI.Sprite.fromImage('textures/worm.png');
         }//worm as food
+        else if(STAGE == ADULT){
+            var food = new PIXI.Sprite.fromImage('textures/shrimp.png');
+            w = 43;
+            h = 16;
+        }//shrimp as food
         else{
             var food = new PIXI.Sprite.fromImage('textures/zooplankton.png');
-        }//
+        }//else
 
         food.position.x = x + w;
         food.position.y = y;
@@ -516,7 +527,7 @@ function animate() {
                         BUFFER_Y = 50;
                         break;
                     case "Striped Bass":
-                        BUFFER_X = 20;
+                        BUFFER_X = 30;
                         BUFFER_Y = 30;
                         break;
                     case "Dam":
@@ -550,7 +561,7 @@ function animate() {
                                     STAGE += 1;
 
                                     switch(STAGE){
-                                        case(1):
+                                        case(SMOLT):
                                             fish.texture = smoltTexture;
                                             stageText.text = "Stage 2: Smolt";
                                             stageText.style.stroke = "#007700";
@@ -559,7 +570,7 @@ function animate() {
                                             tilingSurface.texture = surface2;
                                             tilingSurface.height = WATER_LEVEL;
                                             break;
-                                        case(2):
+                                        case(ADULT):
                                             fish.texture = adultTexture;
                                             stageText.text = "Stage 3: Adult";
                                             stageText.style.stroke = "#770000";
@@ -584,12 +595,7 @@ function animate() {
 
                             }//check if met food requirements to start new stage
 
-                            if(STAGE == 3) {
-                                foodText.text = "Food: " + FOOD_REQ[STAGE-1] + "/" + FOOD_REQ[STAGE-1];
-                            }//update text only when needed
-                            else{
-                                foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
-                            }
+                            foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
 
                             OBSTACLES[i].visible = false;
                             OBSTACLES.splice(i, 1);
@@ -623,7 +629,7 @@ function animate() {
                     message.text = "You were eaten by a Osprey! Being in the air makes you a vulnerable target to birds.";
                     break;
                 case "Ground":
-                    message.text = "You got eaten by a Sturgeon!"
+                    message.text = "You were eaten by a Sturgeon!"
                     break;
                 case "Dam":
                     message.text = "You swam into a Dam!"
@@ -673,13 +679,12 @@ function spawnObstacle(){
     //add new random obstacles
     var numTypes = 0;
     switch(STAGE){
-        case 0:
+        case FRY:
+        case SMOLT:
+        case ADULT:
             numTypes = 2;
             break;
-        case 1:
-            numTypes = 2;
-            break;
-        case 2:
+        case SPAWNING_ADULT:
             numTypes = 3;
             break;
     }//switch
@@ -687,9 +692,9 @@ function spawnObstacle(){
     var selection = Math.floor(numTypes * Math.random());
     switch(selection) {
         case 0:
-            if(STAGE != 2) {
+            if(STAGE != SPAWNING_ADULT) {
                 makeFood();
-            }//only make food at first 2 stages
+            }//only make food when not spawning adult
             else{
                 makeDebris();
             }//else
@@ -714,13 +719,14 @@ function makeDebris(){
     //add new random obstacles
     var numTypes = 0;
     switch(STAGE){
-        case 0:
+        case FRY:
             numTypes = 1;
             break;
-        case 1:
+        case SMOLT:
             numTypes = 3;
             break;
-        case 2:
+        case ADULT:
+        case SPAWNING_ADULT:
             numTypes = 3;
             break;
     }//switch
@@ -731,7 +737,7 @@ function makeDebris(){
             addNewObs(WIDTH, rand_y, 130, 123, "Net");
             break;
         case 1:
-            if(STAGE != 2) {
+            if(STAGE != SPAWNING_ADULT) {
                 addNewObs(WIDTH, rand_y, 204, 96, "Striped Bass");
             }//only add striped bass on lvl 2
             else{
