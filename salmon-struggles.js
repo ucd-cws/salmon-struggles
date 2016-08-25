@@ -24,7 +24,7 @@ var WATER_LEVEL = 100; //where water level is
 var GROUND_HEIGHT = 50;
 var OBSTACLES = []; //obstacles array
 var DAM_WIDTH = 80;
-var AIR_THRESHOLD = 130; //time units player can stay above water
+var AIR_THRESHOLD = 140; //time units player can stay above water
 var STAGE = 0; //what stage player is on (Fry, Smolt, Adult, Spawning Adult)
 var FOOD_COUNT = 0;
 //var FOOD_REQ = [5, 5, 5];
@@ -35,7 +35,7 @@ var WAIT_THRESHOLD = 35;//how long to wait before user can press Buttons
 var DAMS_JUMPED = 0;
 var DAMS_REQ = 5; //dams needed to jump over to make it to spawning grounds
 
-//Stages Macros
+//Stage Macros
 var FRY = 0;
 var SMOLT = 1;
 var ADULT = 2;
@@ -45,7 +45,8 @@ var SPAWNING_ADULT = 3;
 var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.\n\n- Keep clicking to swim upwards -";
 var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt need to eat Dragonfly Nymphs (babies), Stone Flies, and Worms.\n\nThis is also the time his scales change and he migrates to " +
     "the delta/ocean. He now needs to be aware of big fish, hooks, and low water flow.\n\nEat 5 worms to survive.";
-var s3Text = "Sam is now an adult and managed to survive in the ocean. Salmon swim back to the freshwater where to they were born to reproduce. Sam developed a hooked jaw (Kype) and his skin turned red to notify his readiness to spawn. \n\n Adult salmon eat other fish, squid, and shrimp but they do not eat during spawning season. Sam also now needs to face dams.\n\n Jump over 5 Dams to make it home.";
+var s3Text = "Sam is now an adult and has made it to the ocean. This is where Salmon spend most of their life. \n\n Eat 5 shrimp to survive.";
+var s4Text = "Sam is now an adult and managed to survive in the ocean. Salmon swim back to the freshwater where to they were born to reproduce. Sam developed a hooked jaw (Kype) and his skin turned red to notify his readiness to spawn. \n\n Adult salmon eat other fish, squid, and shrimp but they do not eat during spawning season. Sam also now needs to face dams.\n\n Jump over 5 Dams to make it home.";
 var endText = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
 
 //Swapping Textures
@@ -477,11 +478,27 @@ function animate() {
 
                 if(OBSTACLES[i].x < (OBSTACLES[i].width*-2)){
                     OBSTACLES.splice(i, 1);
+
+                    if(OBSTACLES[i].type == "Dam") {
+                        DAMS_JUMPED++;
+                        foodText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
+
+                        if (DAMS_JUMPED/3 == DAMS_REQ) {
+                            stageText.text = "Life cycle complete";
+                            stageText.style.stroke = "#550055";
+                            message2.text = endText;
+                            letsgoBtn.visible = false;
+                            playagainBtn.visible = true;
+
+                            STARTED = false;
+                            instructions.visible = true; //show instructions
+                        }
+                    }
+
                 }//remove obstacles that have passed
 
-                //Low flow logic for second stage
-
-                if(STAGE == 1 && (FOOD_COUNT % 3 == 0)) {
+                //Low flow logic for smolt stage
+                if(STAGE == SMOLT && (FOOD_COUNT % 3 == 0)) {
                     LOW_FLOW = true;
                     lowflowText.visible = true;
                 }//turn on low flow
@@ -491,7 +508,7 @@ function animate() {
                 }//turn off low flow
 
 
-                if(LOW_FLOW && (STAGE == 1)) {
+                if(LOW_FLOW && (STAGE == SMOLT)) {
                     if(OBSTACLES[i].type == "Striped Bass"){
                         OBSTACLES[i].position.x -= 3.5;
                     }//predators will move faster
@@ -579,23 +596,29 @@ function animate() {
                                             tilingSurface.texture = surface;
                                             tilingSurface.height = WATER_LEVEL;
                                             break;
-                                        case(3):
-                                            stageText.text = "Life cycle complete";
-                                            stageText.style.stroke = "#550055";
-                                            message2.text = endText;
-                                            letsgoBtn.visible = false;
-                                            playagainBtn.visible = true;
+                                        case(SPAWNING_ADULT):
+                                            fish.texture = spawningAdultTexture;
+                                            stageText.text = "Stage 4: Spawning";
+                                            stageText.style.stroke = "#990000";
+                                            foodText.text = "Dams Jumped: 0" + "/" + DAMS_REQ;
+                                            message2.text = s4Text;
                                             break;
                                     }//update Stage text
 
                                 }//stage up
+
+                                //reset obstacles
+                                obst.children = [];
+                                OBSTACLES = [];
 
                                 STARTED = false;
                                 instructions.visible = true; //show instructions
 
                             }//check if met food requirements to start new stage
 
-                            foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+                            if(STAGE != SPAWNING_ADULT) {
+                                foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+                            }//if
 
                             OBSTACLES[i].visible = false;
                             OBSTACLES.splice(i, 1);
@@ -743,7 +766,7 @@ function makeDebris(){
             else{
                 addNewObs(WIDTH, rand_y, 32, 71, "Hook");
                 rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-                addNewObs(WIDTH, rand_y, 32, 71, "Hook"); //add second hook
+                addNewObs(WIDTH, rand_y, 130, 123, "Net");
                 break;
             }
             break;
@@ -774,7 +797,53 @@ function restartStage(){
     STARTED = true;
     DEAD = false;
     FOOD_COUNT = 0;
-    foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+    DAMS_JUMPED = 0;
+    if(STAGE != SPAWNING_ADULT) {
+        foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+    }//display food
+    else{
+        foodText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
+    }//display dams jumped
     warning.visible = true;
     makeDebris();
 }//restart stage
+
+
+function keyboard(keyCode) {
+    var key = {};
+    key.code = keyCode;
+    key.isDown = false;
+    key.isUp = true;
+    key.press = undefined;
+    key.release = undefined;
+    //The `downHandler`
+    key.downHandler = function(event) {
+        if (event.keyCode === key.code) {
+            if (key.isUp && key.press) key.press();
+            key.isDown = true;
+            key.isUp = false;
+        }
+        event.preventDefault();
+    };
+    //The `upHandler`
+    key.upHandler = function(event) {
+        if (event.keyCode === key.code) {
+            if (key.isDown && key.release) key.release();
+            key.isDown = false;
+            key.isUp = true;
+        }
+        event.preventDefault();
+    };
+    //Attach event listeners
+    window.addEventListener(
+        "keydown", key.downHandler.bind(key), false
+    );
+    window.addEventListener(
+        "keyup", key.upHandler.bind(key), false
+    );
+    return key;
+}
+var up = keyboard(38);
+up.press = function() {
+    FOOD_COUNT++;
+};
