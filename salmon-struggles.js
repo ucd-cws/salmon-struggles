@@ -2,12 +2,35 @@
  * Created by Lawrence on 8/11/2016.
  */
 
+/**
+ * TODO:
+ * -Add Orcas
+ * -Fix Deprecation Warning
+ * -Add seals
+ * -Add sound for swimming
+ *
+ * -Add large mouth bass for Smolt and Adult stages
+ * -Add Catfish for Smolt and Adult stages
+ * -Find a better way to do collision detection.
+ * -Prevent dam from appearing if jumped over requirement
+ * -Add water rippling effect
+ *
+ * Long term
+ * -Implement Temperature as way of dying
+ * -Getting lost in the delta
+ * -Hatchery vs. Wildfish
+ * -Choose own story
+ * -Add pumps
+ * -Sound effects
+ * -Different difficulties
+ * -Enhanced bird alert
+ */
 
 /**
  * DEBUG MODE
- * Debug offers only 2 food requirements per stage
- * Press up arrow to feed the fish. However, the last food must be eaten manually.
- * Debug mode is good for showing the whole game in a short amount of time.
+ * -Debug offers only 2 food requirements per stage
+ * -Press up arrow to add food. You can change what this does in the up.press = function() {} definition
+ * -Debug mode is good for showing the whole game in a short amount of time.
  */
 var DEBUG = false;
 
@@ -31,11 +54,10 @@ var STAGE = 0; //what stage player is on (Fry, Smolt, Adult, Spawning Adult)
 var FOOD_COUNT = 0;
 if(DEBUG){
     var FOOD_REQ = [2, 2, 2];
-}
+}//debug on
 else{
-    var FOOD_REQ = [5, 5, 5];
-}
-
+    var FOOD_REQ = [5, 10, 15];
+}//normal
 var LOW_FLOW = false;
 var WAIT = 0; //used to prevent user from clicking when instructions opened
 var WAIT_THRESHOLD = 35;//how long to wait before user can press Buttons
@@ -49,12 +71,22 @@ var ADULT = 2;
 var SPAWNING_ADULT = 3;
 
 //Text
-var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger.\n\nEat 5 Orange Zooplankton while avoiding the nets.\n\n- Keep clicking to swim upwards -";
-var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt need to eat Dragonfly Nymphs (babies), Stone Flies, and Worms.\n\nThis is also the time his scales change and he migrates to " +
-    "the delta/ocean. He now needs to be aware of big fish, hooks, and low water flow.\n\nEat 5 worms to survive.";
-var s3Text = "Sam is now an adult and has made it to the ocean. This is where Salmon spend most of their life. \n\n Eat 5 shrimp to survive.";
-var s4Text = "Sam is now an adult and managed to survive in the ocean. Salmon swim back to the freshwater where to they were born to reproduce. Sam developed a hooked jaw (Kype) and his skin turned red to notify his readiness to spawn. \n\n Adult salmon eat other fish, squid, and shrimp but they do not eat during spawning season. Sam also now needs to face dams.\n\n Jump over 5 Dams to make it home.";
-var endText = "Sam made it back to where he was born and reproduces with a female salmon. His arduous journey is over but a new generation of Salmon live on.\n\nTHE END";
+var s1Text = "This is the story of Sam the Salmon. Baby Salmon, Fry, eat things like Fly Larvae and Zooplankton to get bigger." +
+    "\n\nEat 5 Orange Zooplankton while avoiding the obstacles." +
+    "\n\n\n\n - Keep clicking to swim upwards -";
+var s2Text = "Sam is now a Smolt, a teenage Salmon. Smolt Salmon eat Dragonfly Nymphs (babies), Stone Flies, and Worms." +
+    "\n\nSam's scales changed as a he migrates to the delta/ocean. It is here where about 90% of Salmon die. He now needs to be aware of big fish, hooks, and low water flow." +
+    "\n\nEat 10 worms to survive.";
+var s3Text = "Sam is now an adult and has made it to the ocean. This is where Salmon spend most of their life." +
+    "\n\nHere they face different predators such as Orcas (Killer Whales) and Seals. Adult salmon eat other fish, squid, and shrimp." +
+    "\n\nEat 15 shrimp to survive.";
+var s4Text = "Sam is now an adult and managed to survive two years in the ocean. Salmon swim back to the freshwater where to they were born to reproduce. " +
+    "Sam developed a hooked jaw (Kype) and his skin turned red to notify his readiness to spawn. " +
+    "\n\nAdult Salmon do not eat during spawning season. Instead, they feed off their bodily reserves. Sam now needs to jump over dams." +
+    "\n\n Jump over 5 Dams to make it home!";
+var endText = "Sam made it back to where he was born and reproduces with a female salmon. He is now a kelt." +
+    "\n\nSome kelt survive and make it back to the ocean (about 5%). Sadly, Sam is not one of them. His's arduous journey is over but a new generation of Salmon live on." +
+    "\n\n                     - THE END -";
 
 //Swapping Textures
 var fryTexture = PIXI.Texture.fromImage('textures/fry.png');
@@ -87,7 +119,7 @@ function onMouseDown(){
         clickText.visible = false;
         makeDebris(); //add a starting obstacle
         stageText.visible = true;
-        updateFoodText();
+        updateObjectiveText();
     }//not yet started game
     else if (STARTED) {
         fish.speedY = FISH_SPEED;
@@ -110,11 +142,8 @@ stage.addChild(tilingWater);
  * Surface (Sky)
  **********************************/
 var tilingSurface = new PIXI.extras.TilingSprite(surface, WIDTH, HEIGHT);
-//surface.width = WIDTH;
 tilingSurface.texture = surface;
 tilingSurface.height = WATER_LEVEL;
-//tilingSurface.position.x = 0;
-//tilingSurface.position.y = 0;
 stage.addChild(tilingSurface);
 
 /**********************************
@@ -124,8 +153,6 @@ var sand = new PIXI.Texture.fromImage('textures/sand.png');
 var tilingGround = new PIXI.extras.TilingSprite(sand, WIDTH, HEIGHT);
 tilingGround.width = WIDTH;
 tilingGround.height = GROUND_HEIGHT;
-//tilingGround.anchor.x = 0.5;
-//tilingGround.anchor.y = 0.5;
 tilingGround.position.x = 0;
 tilingGround.position.y = HEIGHT - GROUND_HEIGHT;
 stage.addChild(tilingGround);
@@ -249,6 +276,22 @@ function addNewObs(x, y, w, h, type){
         //Push to array so we can track it later
         OBSTACLES.push(sBass);
     }
+    else if(type == "Orca"){
+        var orca = new PIXI.Sprite.fromImage('textures/orca.png');
+        orca.position.x = x + w;
+        orca.position.y = y;
+        orca.width = w;
+        orca.height = h;
+        orca.type = type;
+        orca.anchor.x = 0.5;
+        orca.anchor.y = 0.7; //anchor near bottom
+
+        //Add to container
+        obst.addChild(orca);
+
+        //Push to array so we can track it later
+        OBSTACLES.push(orca);
+    }
 
 }//add new obstacles
 
@@ -301,7 +344,7 @@ var messageStyle = {
     font : 'bold 24px Arial',
     fill : '#EEEEEE',
     stroke : '#333333',
-    strokeThickness : 5,
+    strokeThickness : 4,
     wordWrap : true,
     wordWrapWidth : WIDTH - 80 //30 and 10 for one size * 2
 };
@@ -317,7 +360,7 @@ var hudStyle = {
     font : 'bold 20px Arial',
     fill : '#F7EDCA',
     stroke : '#000077',
-    strokeThickness : 5,
+    strokeThickness : 4,
 }
 
 /**********************************
@@ -393,10 +436,10 @@ clickText.y = 300;
 stage.addChild(clickText);
 
 //Food text
-var foodText = new PIXI.Text("", hudStyle);
-foodText.x = 200;
-foodText.y = 5;
-stage.addChild(foodText);
+var objectiveText = new PIXI.Text("", hudStyle);
+objectiveText.x = 200;
+objectiveText.y = 5;
+stage.addChild(objectiveText);
 
 //Stage text
 var stageText = new PIXI.Text("Stage 1: Fry", hudStyle);
@@ -488,7 +531,7 @@ function animate() {
 
                     if(OBSTACLES[i].type == "Dam") {
                         DAMS_JUMPED++;
-                        updateFoodText();
+                        updateObjectiveText();
 
                         if (DAMS_JUMPED/3 == DAMS_REQ) {
                             stageText.text = "Life cycle complete";
@@ -499,8 +542,8 @@ function animate() {
 
                             STARTED = false;
                             instructions.visible = true; //show instructions
-                        }
-                    }
+                        }//made required jumps
+                    }//jumped over dam pillar
 
                 }//remove obstacles that have passed
 
@@ -526,7 +569,10 @@ function animate() {
                 else {
                     if(OBSTACLES[i].type == "Striped Bass"){
                         OBSTACLES[i].position.x -= 5;
-                    }//predators will move faster
+                    }//bass will move faster
+                    else if(OBSTACLES[i].type == "Orca"){
+                        OBSTACLES[i].position.x -= 3;
+                    }//bass will move faster
                     else{
                         OBSTACLES[i].position.x -= 4;
                     }//other
@@ -561,6 +607,10 @@ function animate() {
                     case "Hook":
                         BUFFER_X = 15;
                         BUFFER_Y = 30;
+                        break;
+                    case "Orca":
+                        BUFFER_X = 80;
+                        BUFFER_Y = 130;
                         break;
                 }//switch
 
@@ -623,7 +673,7 @@ function animate() {
 
                             }//check if met food requirements to start new stage
 
-                            updateFoodText();
+                            updateObjectiveText();
                             OBSTACLES[i].visible = false;
                             OBSTACLES.splice(i, 1);
                             spawnObstacle();
@@ -669,6 +719,9 @@ function animate() {
                     break;
                 case "Hook":
                     message.text = "You got hooked!"
+                    break;
+                case "Orca":
+                    message.text = "You were eaten by an Orca!"
                     break;
             }//switch
 
@@ -730,7 +783,9 @@ function spawnObstacle(){
             makeDebris();
             break;
         case 2:
-            makeDam();
+            if(DAMS_JUMPED/3 != DAMS_REQ){
+                makeDam();
+            }//only make the required amount of dams
             break;
     }//switch
 }//spawn random obstacle
@@ -759,20 +814,26 @@ function makeDebris(){
     }//switch
 
     var selection = Math.floor(numTypes * Math.random());
+
     switch(selection) {
         case 0:
             addNewObs(WIDTH, rand_y, 130, 123, "Net");
             break;
         case 1:
-            if(STAGE != SPAWNING_ADULT) {
+            if(STAGE == SMOLT) {
                 addNewObs(WIDTH, rand_y, 204, 96, "Striped Bass");
-            }//only add striped bass on lvl 2
+                rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+                addNewObs(WIDTH, rand_y, 204, 96, "Striped Bass");
+            }//add bass if smolt
+            else if(STAGE == ADULT){
+                addNewObs(WIDTH, rand_y, 850, 357, "Orca");
+            }//add orca and seal if adult
             else{
                 addNewObs(WIDTH, rand_y, 32, 71, "Hook");
                 rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
                 addNewObs(WIDTH, rand_y, 130, 123, "Net");
                 break;
-            }
+            }//spawning adult
             break;
         case 2:
             addNewObs(WIDTH, rand_y, 32, 71, "Hook");
@@ -802,18 +863,17 @@ function restartStage(){
     DEAD = false;
     FOOD_COUNT = 0;
     DAMS_JUMPED = 0;
-    updateFoodText();
+    updateObjectiveText();
     warning.visible = true;
     makeDebris();
 }//restart stage
 
-function updateFoodText(){
+function updateObjectiveText(){
     if(STAGE != SPAWNING_ADULT)
-        foodText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
+        objectiveText.text = "Food: " + FOOD_COUNT + "/" + FOOD_REQ[STAGE];
     else
-        foodText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
-
-}
+        objectiveText.text = "Dams Jumped: " + Math.floor(DAMS_JUMPED / 3) + "/" + DAMS_REQ;
+}//updates text in hud
 
 
 
@@ -854,7 +914,10 @@ function keyboard(keyCode) {
 var up = keyboard(38);
 up.press = function() {
     if(DEBUG) {
-        FOOD_COUNT++;
-        updateFoodText();
+        //makeFood();
+        //updateObjectiveText();
+        var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+        addNewObs(WIDTH, rand_y, 850, 357, "Orca");
+
     }
 };
