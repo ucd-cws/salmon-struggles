@@ -96,6 +96,15 @@ var spawningAdultTexture = PIXI.Texture.fromImage('textures/adult2.png');
 var surface = PIXI.Texture.fromImage('textures/sky.png');
 var surface2 = PIXI.Texture.fromImage('textures/sky2.png');
 
+//sounds
+var swimSound = loadAudio("audio/s2.wav");
+
+function loadAudio(uri){
+    var audio = new Audio();
+    audio.src = uri;
+    return audio;
+}
+
 /**********************************
  * Renderer and Stage setup
  **********************************/
@@ -122,6 +131,7 @@ function onMouseDown(){
         updateObjectiveText();
     }//not yet started game
     else if (STARTED) {
+        swimSound.play();
         fish.speedY = FISH_SPEED;
         if (fish.rotation > -0.2) {
             fish.rotation -= 0.2;
