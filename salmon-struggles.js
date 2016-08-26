@@ -252,7 +252,7 @@ function addNewObs(x, y, w, h, type){
         OBSTACLES.push(food);
     }
     else if(type == "Hook"){
-        var hook = new PIXI.Sprite.fromImage('textures/Hook.png');
+        var hook = new PIXI.Sprite.fromImage('textures/hook.png');
         hook.position.x = x + w;
         hook.position.y = y;
         hook.width = w;
