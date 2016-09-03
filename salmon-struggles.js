@@ -29,7 +29,7 @@
  * -Press up arrow to add food. You can change what this does in the up.press = function() {} definition
  * -Debug mode is good for showing the whole game in a short amount of time.
  */
-var DEBUG = false;
+var DEBUG = true;
 
 /**********************************
  * Global Variables
@@ -301,6 +301,22 @@ function addNewObs(x, y, w, h, type){
     }
     else if(type == "Seal"){
         var orca = new PIXI.Sprite.fromImage('textures/seal.png');
+        orca.position.x = x + w;
+        orca.position.y = y;
+        orca.width = w;
+        orca.height = h;
+        orca.type = type;
+        orca.anchor.x = 0.5;
+        orca.anchor.y = 0.5; //anchor near bottom
+
+        //Add to container
+        obst.addChild(orca);
+
+        //Push to array so we can track it later
+        OBSTACLES.push(orca);
+    }
+    else if(type == "Largemouth Bass"){
+        var orca = new PIXI.Sprite.fromImage('textures/largemouth_bass.png');
         orca.position.x = x + w;
         orca.position.y = y;
         orca.width = w;
@@ -596,8 +612,11 @@ function animate() {
                 else if(OBSTACLES[i].type == "Orca"){
                     OBSTACLES[i].position.x -= 3.5;
                 }//bass will move faster
-                else if(OBSTACLES[i].type == "Seal"){
+                else if(OBSTACLES[i].type == "Seal") {
                     OBSTACLES[i].position.x -= 3.25;
+                }
+                else if(OBSTACLES[i].type == "Largemouth Bass"){
+                        OBSTACLES[i].position.x -= 3.15;
                 }//bass will move faster
                 else{
                     OBSTACLES[i].position.x -= 4;
@@ -641,6 +660,10 @@ function animate() {
                     case "Seal":
                         BUFFER_X = 35;
                         BUFFER_Y = 40;
+                        break;
+                    case "Largemouth Bass":
+                        BUFFER_X = 30;
+                        BUFFER_Y = 30;
                         break;
                 }//switch
 
@@ -756,6 +779,9 @@ function animate() {
                 case "Seal":
                     message.text = "You were eaten by a Seal!"
                     break;
+                case "Largemouth Bass":
+                    message.text = "You were eaten by a Largemouth Bass!"
+                    break;
             }//switch
 
             STARTED = false;
@@ -861,13 +887,17 @@ function makeDebris(){
             else if(STAGE == ADULT) {
                 if (FOOD_COUNT % 2 == 0) {
                     addNewObs(WIDTH, rand_y, 850, 357, "Orca");
+
                 }//add orca
                 else {
                     addNewObs(WIDTH, rand_y, 391, 128, "Seal");
+                    addNewObs(WIDTH, rand_y, 391, 200, "Largemouth Bass");
                     rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
                     addNewObs(WIDTH, rand_y, 32, 32, "Food");
                 }//add seal and food
+
             }//add orca and seal if adult
+
             else{
                 addNewObs(WIDTH, rand_y, 32, 71, "Hook");
                 rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
@@ -956,8 +986,8 @@ up.press = function() {
     if(DEBUG) {
         makeFood();
         updateObjectiveText();
-        //var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-        //addNewObs(WIDTH, rand_y, 391, 128, "Seal");
+        var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+        addNewObs(WIDTH, rand_y, 391, 128, "Largemouth Bass");
 
     }
 };
