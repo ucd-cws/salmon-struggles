@@ -884,6 +884,11 @@ function makeDebris(){
                 rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
                 addNewObs(WIDTH, rand_y, 204, 96, "Striped Bass");
             }//add bass if smolt
+            if(STAGE == SMOLT) {
+                addNewObs(WIDTH, rand_y, 204, 96, "Largemouth Bass");
+                rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT / 2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+                addNewObs(WIDTH, rand_y, 204, 96, "Largemouth Bass");
+            }
             else if(STAGE == ADULT) {
                 if (FOOD_COUNT % 2 == 0) {
                     addNewObs(WIDTH, rand_y, 850, 357, "Orca");
@@ -891,7 +896,6 @@ function makeDebris(){
                 }//add orca
                 else {
                     addNewObs(WIDTH, rand_y, 391, 128, "Seal");
-                    addNewObs(WIDTH, rand_y, 391, 200, "Largemouth Bass");
                     rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
                     addNewObs(WIDTH, rand_y, 32, 32, "Food");
                 }//add seal and food
@@ -908,6 +912,7 @@ function makeDebris(){
         case 2:
             addNewObs(WIDTH, rand_y, 32, 71, "Hook");
             break;
+
     }//switch
 
     //create random predators, nets, and temperature fluctuations
@@ -986,8 +991,8 @@ up.press = function() {
     if(DEBUG) {
         makeFood();
         updateObjectiveText();
-        var rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-        addNewObs(WIDTH, rand_y, 391, 128, "Largemouth Bass");
+        rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT / 2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+        addNewObs(WIDTH, rand_y, 204, 96, "Largemouth Bass");
 
     }
 };
