@@ -884,24 +884,23 @@ function makeDebris(){
                 rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
                 addNewObs(WIDTH, rand_y, 204, 96, "Striped Bass");
             }//add bass if smolt
-            if(STAGE == SMOLT) {
-                addNewObs(WIDTH, rand_y, 204, 96, "Largemouth Bass");
-                rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT / 2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
-                addNewObs(WIDTH, rand_y, 204, 96, "Largemouth Bass");
-            }
             else if(STAGE == ADULT) {
                 if (FOOD_COUNT % 2 == 0) {
-                    addNewObs(WIDTH, rand_y, 850, 357, "Orca");
-
+                    var which_predator = Math.floor(3 * Math.random())
+                    switch (which_predator) {
+                        case 0:
+                            addNewObs(WIDTH, rand_y, 850, 357, "Orca");
+                        case 1:
+                            addNewObs(WIDTH, rand_y, 391, 128, "Seal");
+                        case 2:
+                            addNewObs(WIDTH, rand_y, 200, 73, "Largemouth Bass");
+                    }
                 }//add orca
                 else {
-                    addNewObs(WIDTH, rand_y, 391, 128, "Seal");
-                    rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
+                    rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT / 2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
                     addNewObs(WIDTH, rand_y, 32, 32, "Food");
                 }//add seal and food
-
-            }//add orca and seal if adult
-
+            }
             else{
                 addNewObs(WIDTH, rand_y, 32, 71, "Hook");
                 rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT/2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
@@ -912,7 +911,6 @@ function makeDebris(){
         case 2:
             addNewObs(WIDTH, rand_y, 32, 71, "Hook");
             break;
-
     }//switch
 
     //create random predators, nets, and temperature fluctuations
@@ -988,11 +986,10 @@ function keyboard(keyCode) {
 }
 var up = keyboard(38);
 up.press = function() {
-    if(DEBUG) {
+    if (DEBUG) {
         makeFood();
         updateObjectiveText();
         rand_y = Math.floor(Math.random() * (HEIGHT - WATER_LEVEL - GROUND_HEIGHT / 2)) + WATER_LEVEL; //adjust rand_y to spawn only in a range
         addNewObs(WIDTH, rand_y, 204, 96, "Largemouth Bass");
-
     }
-};
+}
